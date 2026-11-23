@@ -1,0 +1,3090 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>슬기로운 카페 생활 - 어르신 키오스크 실전 마스터 게임</title>
+
+  <!-- 카카오톡 공유용 오픈그래프(OG) 메타 태그 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="☕ 슬기로운 카페 생활 - 어르신 키오스크 단골왕 도전기!">
+  <meta property="og:description" content="12명의 이웃 손님 미션과 7가지 실전 돌발 상황까지! 어르신들이 카페 키오스크 주문을 게임처럼 쉽고 재미있게 배우는 시뮬레이션">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80">
+  <style>
+    :root {
+      --primary: #EA580C;
+      --primary-dark: #C2410C;
+      --primary-light: #FFEDD5;
+      --accent-green: #10B981;
+      --accent-blue: #2563EB;
+      --accent-red: #DC2626;
+      --accent-gold: #F59E0B;
+      --text-dark: #1E293B;
+      --bg-cream: #FFFBEB;
+      --border-radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: #F1F5F9;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 스마트폰 한 화면에 100% 딱 맞추는 반응형 키오스크 프레임 */
+    .kiosk-container {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      max-width: 480px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* PC나 태블릿 화면일 때만 예쁜 스마트폰 외곽 프레임 적용 */
+    @media (min-width: 601px) and (min-height: 700px) {
+      body {
+        padding: 10px;
+        background: radial-gradient(circle at top, #FFFBEB 0%, #FED7AA 100%);
+      }
+      .kiosk-container {
+        height: 96vh;
+        max-height: 880px;
+        border: 8px solid #334155;
+        border-radius: 36px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    /* 폭죽 캔버스 */
+    #confettiCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 250;
+    }
+
+    /* 헤더: 컴팩트한 모바일 최적화 */
+    .header {
+      background: linear-gradient(135deg, #EA580C, #F97316);
+      color: white;
+      padding: 7px 10px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
+    }
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .header-title {
+      font-size: 16px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      letter-spacing: -0.3px;
+    }
+    .header-btns {
+      display: flex;
+      gap: 3px;
+    }
+    .top-action-btn {
+      background: rgba(255, 255, 255, 0.95);
+      color: #C2410C;
+      border: none;
+      border-radius: 10px;
+      padding: 4px 7px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+      transition: transform 0.12s;
+    }
+    .top-action-btn:active {
+      transform: scale(0.93);
+    }
+
+    /* 단골 칭호 스트립 */
+    .user-profile-strip {
+      background: rgba(0, 0, 0, 0.16);
+      border-radius: 9px;
+      padding: 3px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      font-weight: 800;
+    }
+    .stamp-count-badge {
+      background: #FDE047;
+      color: #713F12;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-weight: 900;
+    }
+
+    /* 살아 움직이는 라이브 카페 캐릭터 극장 무대 */
+    .cafe-live-stage {
+      background: linear-gradient(180deg, #FFF7ED 0%, #FFEDD5 72%, #D97706 72%, #B45309 100%);
+      border-bottom: 2px solid #9A3412;
+      height: 92px;
+      position: relative;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      padding: 4px 8px 5px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .cafe-awning {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 9px;
+      background: repeating-linear-gradient(
+        90deg,
+        #EA580C 0px,
+        #EA580C 18px,
+        #FEF3C7 18px,
+        #FEF3C7 36px
+      );
+      border-bottom: 2px solid #C2410C;
+      z-index: 2;
+    }
+    .stage-actor {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      z-index: 5;
+      transition: transform 0.2s;
+    }
+    .stage-actor:active {
+      transform: scale(0.92);
+    }
+    .actor-svg-wrap {
+      width: 62px;
+      height: 64px;
+      animation: charBreathe 2.4s infinite ease-in-out;
+      transform-origin: bottom center;
+      position: relative;
+    }
+    .actor-name-pill {
+      background: rgba(30, 41, 59, 0.88);
+      color: #FFF;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 8px;
+      margin-top: -4px;
+      z-index: 6;
+      white-space: nowrap;
+      border: 1px solid #FDE68A;
+    }
+    .actor-emote-bubble {
+      position: absolute;
+      top: -9px;
+      right: -8px;
+      background: #FFFFFF;
+      border: 2px solid #F59E0B;
+      border-radius: 12px;
+      padding: 1px 5px;
+      font-size: 11.5px;
+      font-weight: 900;
+      color: #1E293B;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      z-index: 10;
+      white-space: nowrap;
+      animation: floatEmote 1.6s infinite ease-in-out alternate;
+    }
+    @keyframes floatEmote {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(-3px) scale(1.06); }
+    }
+    @keyframes charBreathe {
+      0%, 100% { transform: translateY(0) scaleY(1); }
+      50% { transform: translateY(-2px) scaleY(1.03); }
+    }
+    .stage-actor.state-happy .actor-svg-wrap {
+      animation: charJump 0.45s infinite alternate cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes charJump {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(-9px) scale(1.07); }
+    }
+    .stage-actor.state-dancing .actor-svg-wrap {
+      animation: charDance 0.5s infinite alternate ease-in-out;
+    }
+    @keyframes charDance {
+      0% { transform: rotate(-7deg) translateY(-3px); }
+      100% { transform: rotate(7deg) translateY(-6px); }
+    }
+    .stage-actor.state-surprised .actor-svg-wrap {
+      animation: charShake 0.3s 3;
+    }
+    @keyframes charShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px) rotate(-4deg); }
+      75% { transform: translateX(4px) rotate(4deg); }
+    }
+    .char-eyes {
+      animation: eyeBlink 3.6s infinite;
+      transform-origin: center;
+    }
+    @keyframes eyeBlink {
+      0%, 92%, 100% { transform: scaleY(1); }
+      96% { transform: scaleY(0.1); }
+    }
+    .bomi-mouth.talking {
+      animation: mouthTalk 0.22s infinite alternate;
+      transform-origin: center;
+    }
+    @keyframes mouthTalk {
+      0% { transform: scaleY(0.4); }
+      100% { transform: scaleY(1.6); }
+    }
+    .sunja-right-arm {
+      transform-origin: 38px 52px;
+      transition: transform 0.2s;
+    }
+    .sunja-right-arm.tapping {
+      animation: armTapKiosk 0.32s ease-in-out 2;
+    }
+    @keyframes armTapKiosk {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-25deg) translate(2px, -3px); }
+    }
+    .bomi-arm {
+      transform-origin: 22px 52px;
+      animation: waveArm 2s infinite ease-in-out alternate;
+    }
+    .bomi-arm.making {
+      animation: shakeDrink 0.25s infinite alternate;
+    }
+    @keyframes waveArm {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(14deg); }
+    }
+    @keyframes shakeDrink {
+      0% { transform: rotate(-15deg) translateY(-2px); }
+      100% { transform: rotate(20deg) translateY(2px); }
+    }
+    .floating-particle {
+      position: absolute;
+      font-size: 16px;
+      pointer-events: none;
+      z-index: 30;
+      animation: riseAndFade 1s ease-out forwards;
+    }
+    @keyframes riseAndFade {
+      0% { opacity: 1; transform: translateY(0) scale(0.8); }
+      100% { opacity: 0; transform: translateY(-36px) scale(1.3); }
+    }
+
+    /* 상단 미션 쪽지 */
+    .mission-sticky-bar {
+      background: #FEF08A;
+      border-bottom: 2px dashed #CA8A04;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .mission-text-box {
+      flex: 1;
+      line-height: 1.3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mission-client-tag {
+      font-size: 11px;
+      font-weight: 900;
+      color: #FFFFFF;
+      background: #B45309;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .mission-situation-tag {
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #991B1B;
+      background: #FEE2E2;
+      border: 1px solid #F87171;
+      padding: 1px 6px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .mission-quote {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #713F12;
+      width: 100%;
+      margin-top: 1px;
+    }
+    .mission-hl {
+      color: #DC2626;
+      background: #FFFFFF;
+      padding: 0 4px;
+      border-radius: 4px;
+      font-weight: 900;
+      border: 1px solid #FCA5A5;
+    }
+
+    /* 4단계 트랙 바 */
+    .step-track {
+      display: flex;
+      background: #F1F5F9;
+      border-bottom: 1px solid #CBD5E1;
+      padding: 3px 6px;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .step-node {
+      flex: 1;
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #64748B;
+      padding: 3px 2px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .step-node.active {
+      background: #EA580C;
+      color: #FFFFFF;
+      box-shadow: 0 1px 4px rgba(234, 88, 12, 0.3);
+    }
+    .step-node.done {
+      background: #DCFCE7;
+      color: #15803D;
+    }
+
+    /* 도우미 대화창 */
+    .assistant-bubble {
+      background: #FFFBEB;
+      border-bottom: 1.5px solid #FDE68A;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .assistant-pic {
+      font-size: 17px;
+      background: #FDE68A;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .assistant-msg-text {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #78350F;
+      line-height: 1.25;
+      flex: 1;
+    }
+    .replay-voice-btn {
+      background: #FEF3C7;
+      border: 1px solid #F59E0B;
+      color: #92400E;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* 메인 뷰포트 */
+    .game-content {
+      flex: 1;
+      min-height: 0;
+      padding: 6px 10px;
+      overflow-y: auto;
+      background: #F8FAFC;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* 시니어가 실수하기 쉬운 점 부각 배지 */
+    .senior-tip-badge {
+      background: #FEF3C7;
+      border: 1.5px solid #F59E0B;
+      color: #92400E;
+      border-radius: 10px;
+      padding: 4px 8px;
+      font-size: 11.5px;
+      line-height: 1.3;
+      font-weight: 800;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      box-shadow: 0 1px 3px rgba(245, 158, 11, 0.15);
+      flex-shrink: 0;
+    }
+
+    /* 손님 필수 요청 옵션 강조 */
+    .opt-choice-btn.recommended-target {
+      border-color: #F59E0B;
+      position: relative;
+    }
+    .opt-choice-btn.recommended-target::after {
+      content: "★손님요청";
+      position: absolute;
+      top: -6px;
+      right: 3px;
+      background: #EA580C;
+      color: white;
+      font-size: 8.5px;
+      font-weight: 900;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+
+    /* 4개 카테고리 탭 */
+    .category-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+    .cat-tab-btn {
+      padding: 6px 2px;
+      font-size: 12px;
+      font-weight: 800;
+      border: 2px solid #CBD5E1;
+      border-radius: 10px;
+      background: #FFFFFF;
+      color: #475569;
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap;
+      position: relative;
+    }
+    .cat-tab-btn.active {
+      border-color: #EA580C;
+      background: #FFEDD5;
+      color: #C2410C;
+      box-shadow: 0 1px 4px rgba(234, 88, 12, 0.2);
+    }
+    .cat-tab-btn.target-cat-hint::after {
+      content: "👆여기";
+      position: absolute;
+      top: -7px;
+      right: 2px;
+      background: #DC2626;
+      color: white;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 0 4px;
+      border-radius: 5px;
+      animation: bounceHint 0.8s infinite alternate;
+    }
+    @keyframes bounceHint {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-3px); }
+    }
+
+    /* 메뉴 카드 그리드 (2x2) */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      flex: 1;
+      min-height: 0;
+    }
+    .menu-card {
+      background: #FFFFFF;
+      border: 2.5px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 6px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .menu-card:active {
+      transform: scale(0.96);
+    }
+    .menu-card.selected {
+      border-color: #EA580C;
+      background: #FFF7ED;
+      box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.22);
+    }
+    .menu-card.sold-out-card {
+      background: #F1F5F9;
+      border-color: #CBD5E1;
+    }
+    .sold-out-ribbon {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #EF4444;
+      color: white;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 6px;
+    }
+    .menu-target-badge {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      background: #FEF3C7;
+      border: 1px solid #F59E0B;
+      color: #B45309;
+      font-size: 9.5px;
+      font-weight: 900;
+      padding: 1px 4px;
+      border-radius: 5px;
+    }
+    .menu-icon-box {
+      font-size: 28px;
+      margin-bottom: 1px;
+    }
+    .menu-name {
+      font-size: 14px;
+      font-weight: 900;
+      color: #1E293B;
+      word-break: keep-all;
+    }
+    .menu-desc {
+      font-size: 10.5px;
+      color: #64748B;
+      margin: 1px 0 2px;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .menu-price {
+      font-size: 13px;
+      font-weight: 900;
+      color: #EA580C;
+    }
+
+    /* 하단 장바구니 & 수량 조절 바 */
+    .cart-status-bar {
+      background: #FFFFFF;
+      border: 2px solid #FDBA74;
+      border-radius: 12px;
+      padding: 5px 8px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .qty-control-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 2px solid #EA580C;
+      background: #FFF7ED;
+      color: #C2410C;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qty-btn.highlight-plus {
+      background: #EA580C;
+      color: white;
+      animation: pulsePlus 0.8s infinite alternate;
+    }
+    @keyframes pulsePlus {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.12); }
+    }
+    .qty-number {
+      font-size: 14px;
+      font-weight: 900;
+      color: #1E293B;
+      min-width: 34px;
+      text-align: center;
+    }
+
+    /* 오답 삭제 박스 */
+    .cart-check-box {
+      background: #FEF2F2;
+      border: 2px solid #EF4444;
+      border-radius: 12px;
+      padding: 6px 8px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .cart-warning-text {
+      font-size: 12px;
+      font-weight: 800;
+      color: #991B1B;
+      line-height: 1.25;
+    }
+    .cart-delete-btn {
+      background: #DC2626;
+      color: white;
+      border: none;
+      padding: 6px 9px;
+      border-radius: 9px;
+      font-size: 11.5px;
+      font-weight: 900;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* 실시간 반응형 인터랙티브 컵 */
+    .cup-simulation-container {
+      background: #FFFFFF;
+      border: 2px solid #E2E8F0;
+      border-radius: 13px;
+      padding: 6px 10px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .cup-graphic {
+      width: 48px;
+      height: 64px;
+      border: 3px solid #475569;
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+      position: relative;
+      background: rgba(241, 245, 249, 0.6);
+      display: flex;
+      flex-direction: column-reverse;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .cup-graphic.large-cup {
+      width: 56px;
+      height: 72px;
+    }
+    .coffee-liquid {
+      width: 100%;
+      height: 75%;
+      border-radius: 0 0 11px 11px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .ice-cube {
+      width: 11px;
+      height: 11px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1.5px solid #BAE6FD;
+      border-radius: 3px;
+      position: absolute;
+    }
+    .ice-1 { top: 5px; left: 5px; transform: rotate(15deg); }
+    .ice-2 { top: 12px; right: 5px; transform: rotate(-20deg); }
+    .ice-3 { top: 20px; left: 14px; transform: rotate(5deg); }
+    .steam-wave {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+    }
+    .whipped-cream-top {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 20px;
+    }
+    .decaf-cup-tag {
+      position: absolute;
+      bottom: -5px;
+      right: -5px;
+      background: #10B981;
+      color: white;
+      font-size: 8.5px;
+      font-weight: 900;
+      padding: 1px 4px;
+      border-radius: 5px;
+    }
+
+    /* 2단계 옵션 버튼 그리드 */
+    .option-section-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: #334155;
+      margin: 2px 0 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .option-btn-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .opt-choice-btn {
+      flex: 1;
+      padding: 6px 3px;
+      font-size: 11.5px;
+      font-weight: 800;
+      border: 2px solid #CBD5E1;
+      border-radius: 9px;
+      background: #FFFFFF;
+      cursor: pointer;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .opt-choice-btn.active {
+      border-color: #EA580C;
+      background: #FFEDD5;
+      color: #C2410C;
+    }
+
+    /* 3단계 다중 결제 탭 & 결제 슬롯 */
+    .pay-method-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+    .pay-tab-btn {
+      padding: 7px 4px;
+      border-radius: 10px;
+      border: 2px solid #CBD5E1;
+      background: #FFFFFF;
+      font-size: 12px;
+      font-weight: 900;
+      color: #475569;
+      cursor: pointer;
+      position: relative;
+    }
+    .pay-tab-btn.active {
+      border-color: #2563EB;
+      background: #EFF6FF;
+      color: #1D4ED8;
+    }
+    .pay-tab-btn.target-pay::after {
+      content: "★손님요청";
+      position: absolute;
+      top: -7px;
+      right: 4px;
+      background: #DC2626;
+      color: white;
+      font-size: 8.5px;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+
+    .card-dropzone-box {
+      background: #FFFFFF;
+      border: 2.5px dashed #94A3B8;
+      border-radius: 16px;
+      padding: 8px 10px;
+      text-align: center;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 0;
+    }
+    .card-slot-opening {
+      width: 160px;
+      height: 11px;
+      background: #1E293B;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      border: 2px solid #475569;
+    }
+    .playable-card-container {
+      perspective: 1000px;
+      width: 124px;
+      height: 158px;
+      margin-bottom: 6px;
+    }
+    .flipper-card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+      cursor: pointer;
+    }
+    .flipper-card.flipped {
+      transform: rotateY(180deg);
+    }
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 14px;
+      padding: 9px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card-face-front {
+      background: linear-gradient(135deg, #1D4ED8, #3B82F6);
+      border: 2px solid #60A5FA;
+    }
+    .card-face-back {
+      background: linear-gradient(135deg, #475569, #334155);
+      border: 2px solid #94A3B8;
+      transform: rotateY(180deg);
+    }
+    .magnetic-stripe {
+      width: 100%;
+      height: 24px;
+      background: #0F172A;
+      margin-top: 8px;
+      border-radius: 4px;
+    }
+    .card-chip {
+      width: 32px;
+      height: 24px;
+      background: #FBBF24;
+      border: 2px solid #D97706;
+      border-radius: 5px;
+    }
+
+    /* 영수증 */
+    .receipt-paper {
+      width: 190px;
+      background: #FFFFFF;
+      border: 1.5px dashed #94A3B8;
+      margin: 8px auto 0;
+      padding: 8px;
+      font-size: 11.5px;
+      animation: printReceipt 0.8s ease-out forwards;
+      transform-origin: top;
+    }
+    @keyframes printReceipt {
+      0% { transform: scaleY(0); opacity: 0; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+
+    /* 4단계 진동벨 & 번호 선택 */
+    .vibrating-buzzer {
+      width: 96px;
+      height: 96px;
+      background: radial-gradient(circle, #EF4444 30%, #991B1B 100%);
+      border-radius: 50%;
+      margin: 4px auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      animation: buzzerRattle 0.3s infinite;
+      border: 4px solid #FEE2E2;
+      flex-shrink: 0;
+    }
+    @keyframes buzzerRattle {
+      0% { transform: translate(2px, 1px) rotate(0deg); }
+      25% { transform: translate(-2px, -2px) rotate(-3deg); }
+      50% { transform: translate(-3px, 0px) rotate(3deg); }
+      70% { transform: translate(3px, 2px) rotate(0deg); }
+      100% { transform: translate(1px, -1px) rotate(1deg); }
+    }
+    .pickup-counter-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: 100%;
+      margin: 6px 0;
+    }
+    .pickup-tray-btn {
+      background: #FFFFFF;
+      border: 2.5px solid #CBD5E1;
+      border-radius: 12px;
+      padding: 8px 4px;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 900;
+    }
+    .pickup-tray-btn.correct-tray {
+      border-color: #10B981;
+      background: #ECFDF5;
+    }
+
+    /* 하단 조작 바 */
+    .kiosk-footer {
+      padding: 7px 10px;
+      border-top: 1.5px solid #E2E8F0;
+      display: flex;
+      gap: 8px;
+      background: #FFFFFF;
+      flex-shrink: 0;
+    }
+    .footer-btn {
+      flex: 1;
+      height: 48px;
+      font-size: 17px;
+      font-weight: 900;
+      border-radius: 13px;
+      border: none;
+      cursor: pointer;
+    }
+    .footer-btn:active {
+      transform: scale(0.97);
+    }
+    .btn-back { background: #E2E8F0; color: #475569; }
+    .btn-forward {
+      background: linear-gradient(135deg, #EA580C, #F97316);
+      color: white;
+      box-shadow: 0 3px 8px rgba(234, 88, 12, 0.3);
+    }
+
+    /* 팝업 모달 */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(3px);
+      z-index: 180;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+    }
+    .modal-card {
+      background: white;
+      border-radius: 20px;
+      padding: 16px 14px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      max-height: 86vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+    }
+    .dining-choice-row {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .dining-choice-btn {
+      flex: 1;
+      padding: 12px 6px;
+      border-radius: 16px;
+      border: 3px solid #CBD5E1;
+      background: #FFFFFF;
+      cursor: pointer;
+      text-align: center;
+    }
+    .dining-choice-btn.recommended-choice {
+      border-color: #EA580C;
+      background: #FFF7ED;
+    }
+
+    /* 전화번호 키패드 */
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .keypad-btn {
+      background: #F8FAFC;
+      border: 2px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 9px 0;
+      font-size: 18px;
+      font-weight: 900;
+      color: #1E293B;
+      cursor: pointer;
+    }
+    .keypad-btn:active {
+      background: #FFEDD5;
+      border-color: #EA580C;
+    }
+
+    .stamp-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .stamp-slot {
+      aspect-ratio: 1;
+      border: 2px dashed #CBD5E1;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 900;
+      background: #F8FAFC;
+    }
+    .stamp-slot.filled {
+      border: 2px solid #EA580C;
+      background: #FFEDD5;
+    }
+    .badge-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      text-align: left;
+      margin-top: 6px;
+    }
+    .badge-card {
+      background: #F8FAFC;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.45;
+      filter: grayscale(1);
+    }
+    .badge-card.unlocked {
+      opacity: 1;
+      filter: none;
+      background: #FFFBEB;
+      border-color: #F59E0B;
+    }
+  </style>
+</head>
+<body>
+
+<div class="kiosk-container">
+  <!-- 폭죽 캔버스 -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- 오버레이 모달 창들 -->
+  <div id="modalContainer"></div>
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-top-row">
+      <div class="header-title">☕ 슬기로운 카페 생활</div>
+      <div class="header-btns">
+        <button class="top-action-btn" onclick="openDictionaryModal()">📖 용어사전</button>
+        <button class="top-action-btn" onclick="openScenarioPickerModal()">👥 손님선택</button>
+        <button class="top-action-btn" onclick="openPassportModal()">📋 도장판</button>
+        <button class="top-action-btn" onclick="toggleSpeech()" id="speechBtn">🔊 켬</button>
+      </div>
+    </div>
+    <!-- 단골 성취도 요약 바 -->
+    <div class="user-profile-strip">
+      <div id="userLevelTag">🌱 새싹 손님 (김순자 어르신)</div>
+      <div>도장: <span class="stamp-count-badge" id="stampBadgeText">0 / 10개 ☕</span></div>
+    </div>
+  </div>
+
+  <!-- 살아 움직이는 라이브 카페 캐릭터 극장 무대 -->
+  <div class="cafe-live-stage" id="cafeStage">
+    <div class="cafe-awning"></div>
+
+    <!-- 1. 왼쪽: 오늘의 손님 캐릭터 -->
+    <div class="stage-actor" id="actorClient" onclick="interactWithActor('client')">
+      <div class="actor-emote-bubble" id="clientEmoteBubble">☕</div>
+      <div class="actor-svg-wrap" id="clientSvgWrap"></div>
+      <div class="actor-name-pill" id="clientStageName">영희 할머니</div>
+    </div>
+
+    <!-- 2. 가운데: 주인공 김순자 어르신 & 미니 키오스크 -->
+    <div class="stage-actor" id="actorSunja" onclick="interactWithActor('sunja')">
+      <div class="actor-emote-bubble" id="sunjaEmoteBubble">👆</div>
+      <div class="actor-svg-wrap" id="sunjaSvgWrap">
+        <svg viewBox="0 0 80 75" width="100%" height="100%">
+          <!-- 미니 키오스크 기계 (오른편) -->
+          <rect x="52" y="20" width="22" height="48" rx="4" fill="#334155" stroke="#1E293B" stroke-width="1.5"/>
+          <rect id="miniKioskScreen" x="55" y="24" width="16" height="24" rx="2" fill="#38BDF8"/>
+          <rect x="58" y="52" width="10" height="4" rx="1" fill="#FBBF24"/>
+          <!-- 순자 어르신 몸통 -->
+          <path d="M14 68 C14 48 44 48 44 68 Z" fill="#EC4899" stroke="#BE185D" stroke-width="1.5"/>
+          <path d="M24 50 L29 68 L34 50 Z" fill="#FDF2F8"/>
+          <!-- 순자 어르신 뽀글 파마머리 -->
+          <circle cx="18" cy="24" r="8" fill="#9CA3AF"/>
+          <circle cx="29" cy="19" r="9" fill="#9CA3AF"/>
+          <circle cx="40" cy="24" r="8" fill="#9CA3AF"/>
+          <circle cx="15" cy="32" r="7" fill="#9CA3AF"/>
+          <circle cx="43" cy="32" r="7" fill="#9CA3AF"/>
+          <!-- 얼굴 -->
+          <circle cx="29" cy="33" r="13" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+          <!-- 동그란 안경 & 눈 -->
+          <g class="char-eyes">
+            <circle cx="24" cy="32" r="4" fill="none" stroke="#475569" stroke-width="1.5"/>
+            <circle cx="34" cy="32" r="4" fill="none" stroke="#475569" stroke-width="1.5"/>
+            <line x1="28" y1="32" x2="30" y2="32" stroke="#475569" stroke-width="1.5"/>
+            <circle cx="24" cy="32" r="1.5" fill="#1E293B"/>
+            <circle cx="34" cy="32" r="1.5" fill="#1E293B"/>
+          </g>
+          <!-- 발그레한 볼과 미소 -->
+          <circle cx="19" cy="36" r="2.5" fill="#F43F5E" opacity="0.45"/>
+          <circle cx="39" cy="36" r="2.5" fill="#F43F5E" opacity="0.45"/>
+          <path id="sunjaMouth" d="M25 38 Q29 42 33 38" fill="none" stroke="#9A3412" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- 키오스크를 터치하는 오른팔 -->
+          <g class="sunja-right-arm" id="sunjaArm">
+            <path d="M38 52 L54 38" stroke="#EC4899" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="55" cy="37" r="3.5" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+          </g>
+        </svg>
+      </div>
+      <div class="actor-name-pill">김순자 어르신(나)</div>
+    </div>
+
+    <!-- 3. 오른쪽: 다정한 손녀 바리스타 봄이 -->
+    <div class="stage-actor" id="actorBomi" onclick="interactWithActor('bomi')">
+      <div class="actor-emote-bubble" id="bomiEmoteBubble">💖</div>
+      <div class="actor-svg-wrap" id="bomiSvgWrap">
+        <svg viewBox="0 0 70 75" width="100%" height="100%">
+          <!-- 포니테일 머리 -->
+          <circle cx="48" cy="28" r="7" fill="#451A03"/>
+          <!-- 몸통 (바리스타 앞치마) -->
+          <path d="M18 68 C18 48 50 48 50 68 Z" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+          <path d="M23 50 L45 50 L47 68 L21 68 Z" fill="#EA580C"/>
+          <!-- 앞머리 & 얼굴 -->
+          <circle cx="34" cy="32" r="14" fill="#451A03"/>
+          <circle cx="34" cy="34" r="12.5" fill="#FFEDD5" stroke="#D97706" stroke-width="1"/>
+          <!-- 주황색 바리스타 베레모 -->
+          <ellipse cx="34" cy="19" rx="15" ry="6" fill="#EA580C" stroke="#9A3412" stroke-width="1.2"/>
+          <circle cx="34" cy="13" r="2.5" fill="#FDE047"/>
+          <!-- 눈 -->
+          <g class="char-eyes">
+            <circle cx="29" cy="33" r="2" fill="#1E293B"/>
+            <circle cx="39" cy="33" r="2" fill="#1E293B"/>
+            <circle cx="29.6" cy="32.3" r="0.7" fill="#FFFFFF"/>
+            <circle cx="39.6" cy="32.3" r="0.7" fill="#FFFFFF"/>
+          </g>
+          <!-- 볼터치 & 립싱크 입 -->
+          <circle cx="25" cy="36" r="2.5" fill="#FB7185" opacity="0.55"/>
+          <circle cx="43" cy="36" r="2.5" fill="#FB7185" opacity="0.55"/>
+          <ellipse id="bomiMouth" class="bomi-mouth" cx="34" cy="39" rx="3.2" ry="1.8" fill="#E11D48"/>
+          <!-- 흔드는 왼팔 -->
+          <g class="bomi-arm" id="bomiArm">
+            <path d="M22 52 L11 38" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round"/>
+            <circle cx="10" cy="37" r="3.5" fill="#FFEDD5"/>
+            <text id="bomiHandTool" x="2" y="34" font-size="11">👋</text>
+          </g>
+        </svg>
+      </div>
+      <div class="actor-name-pill">손녀 보미</div>
+    </div>
+  </div>
+
+  <!-- 상단 미션 쪽지 -->
+  <div class="mission-sticky-bar">
+    <div class="mission-text-box">
+      <div class="mission-client-tag" id="clientNameTag">👵 영희 할머니의 부탁</div>
+      <div class="mission-situation-tag" id="situationBadgeTag">🎯 실전 미션</div>
+      <div class="mission-quote" id="missionQuoteText"></div>
+    </div>
+  </div>
+
+  <!-- 4단계 진행 바 -->
+  <div class="step-track">
+    <div class="step-node active" id="node1">1. 메뉴선택</div>
+    <div class="step-node" id="node2">2. 옵션조절</div>
+    <div class="step-node" id="node3">3. 결제하기</div>
+    <div class="step-node" id="node4">4. 번호표수령</div>
+  </div>
+
+  <!-- 도우미 봄이 안내창 -->
+  <div class="assistant-bubble">
+    <div class="assistant-pic">👧</div>
+    <div class="assistant-msg-text" id="assistantSpeech">
+      "어르신! 상단 탭에서 알맞은 메뉴를 콕 눌러보세요!"
+    </div>
+    <button class="replay-voice-btn" onclick="replayLastSpeech()">🔊 다시듣기</button>
+  </div>
+
+  <!-- 메인 게임 뷰포트 -->
+  <div class="game-content" id="gameViewport"></div>
+
+  <!-- 하단 조작 바 -->
+  <div class="kiosk-footer" id="kioskFooter">
+    <button class="footer-btn btn-back" id="backBtn" onclick="goPrev()">⬅️ 이전 단계</button>
+    <button class="footer-btn btn-forward" id="forwardBtn" onclick="goNext()">다음 단계 ➡️</button>
+  </div>
+</div>
+
+<script>
+  // Web Audio API 효과음 엔진
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+
+    if (type === 'click') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.08);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    }
+    else if (type === 'correct') {
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + i * 0.07);
+        gain.gain.setValueAtTime(0.18, now + i * 0.07);
+        gain.gain.linearRampToValueAtTime(0.01, now + i * 0.07 + 0.22);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.07);
+        osc.stop(now + i * 0.07 + 0.22);
+      });
+    }
+    else if (type === 'error') {
+      [340, 240].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + i * 0.1);
+        gain.gain.setValueAtTime(0.18, now + i * 0.1);
+        gain.gain.linearRampToValueAtTime(0.01, now + i * 0.1 + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.1);
+        osc.stop(now + i * 0.1 + 0.12);
+      });
+    }
+    else if (type === 'flip') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(640, now + 0.12);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    }
+    else if (type === 'splash') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    }
+    else if (type === 'stamp') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.18);
+      gain.gain.setValueAtTime(0.32, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    }
+    else if (type === 'fanfare') {
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      const times = [0, 0.11, 0.22, 0.36];
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + times[idx]);
+        gain.gain.setValueAtTime(0.24, now + times[idx]);
+        gain.gain.linearRampToValueAtTime(0.01, now + times[idx] + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + times[idx]);
+        osc.stop(now + times[idx] + 0.3);
+      });
+    }
+  }
+
+  // 4개 카테고리 16종 메뉴 데이터베이스 (각 탭당 2x2 = 4개씩 꽉 찬 구성)
+  const menuDatabase = [
+    // 1. 커피류 (4종)
+    { id: 'ame', cat: 'coffee', name: '아메리카노 커피', desc: '깔끔하고 구수한 기본 커피', price: 3000, icon: '☕', liquid: '#78350F' },
+    { id: 'latte', cat: 'coffee', name: '부드러운 우유커피', desc: '우유가 듬뿍 든 카페라떼', price: 3800, icon: '🥛', liquid: '#A16207' },
+    { id: 'vanilla', cat: 'coffee', name: '달콤 바닐라 라떼', desc: '향긋한 바닐라 시럽 커피', price: 4200, icon: '🍯', liquid: '#B45309' },
+    { id: 'mocha', cat: 'coffee', name: '초콜릿 카페모카', desc: '달콤한 초콜릿과 커피 조화', price: 4500, icon: '🍫', liquid: '#5C2C16' },
+
+    // 2. 전통차류 (4종)
+    { id: 'tea', cat: 'tea', name: '건강 대추 쌍화차', desc: '대추와 잣이 듬뿍 든 보약차', price: 4500, icon: '🍵', liquid: '#581C87' },
+    { id: 'yuzu', cat: 'tea', name: '새콤달콤 유자차', desc: '감기 뚝! 향긋한 황금 유자청', price: 3800, icon: '🍋', liquid: '#F59E0B' },
+    { id: 'ginger', cat: 'tea', name: '알싸한 꿀생강차', desc: '몸을 따뜻하게 데우는 생강', price: 4000, icon: '🫚', liquid: '#D97706' },
+    { id: 'chamomile', cat: 'tea', name: '꿀잠 국화 허브차', desc: '마음이 편안해지는 꽃차', price: 4000, icon: '🌼', liquid: '#FDE047' },
+
+    // 3. 스무디·주스류 (4종)
+    { id: 'smoothie', cat: 'juice', name: '달콤 딸기 요거트', desc: '상큼한 딸기와 요거트 스무디', price: 4500, icon: '🍓', liquid: '#BE185D' },
+    { id: 'lemonade', cat: 'juice', name: '톡톡 레몬 에이드', desc: '탄산이 톡 터지는 시원함', price: 4000, icon: '🍹', liquid: '#FBBF24' },
+    { id: 'icetea', cat: 'juice', name: '시원 복숭아 홍차', desc: '달콤하고 시원한 아이스티', price: 3500, icon: '🍑', liquid: '#FB923C' },
+    { id: 'mango', cat: 'juice', name: '황금 망고 주스', desc: '달콤한 열대과일 망고 듬뿍', price: 4800, icon: '🥭', liquid: '#F59E0B' },
+
+    // 4. 간식 디저트류 (4종)
+    { id: 'redbean', cat: 'dessert', name: '찹쌀 단팥빵', desc: '달콤한 통팥이 가득 든 빵', price: 2500, icon: '🥐', liquid: '#78350F' },
+    { id: 'waffle', cat: 'dessert', name: '벨기에 꿀와플', desc: '겉바속촉 메이플 시럽 와플', price: 3500, icon: '🧇', liquid: '#D97706' },
+    { id: 'castella', cat: 'dessert', name: '촉촉 꿀 카스테라', desc: '우유와 찰떡궁합 부드러운 빵', price: 3200, icon: '🍰', liquid: '#FDE047' },
+    { id: 'injeolmi', cat: 'dessert', name: '콩고물 인절미 토스트', desc: '고소한 콩가루와 쫄깃한 떡', price: 4200, icon: '🥪', liquid: '#CA8A04' }
+  ];
+
+  // 쉬운 우리말 카페 용어 사전 데이터
+  const cafeGlossary = [
+    { term: '키오스크 (무인주문기)', easy: '점원 대신 화면을 손가락으로 톡톡 터치해서 주문하고 계산하는 똑똑한 기계예요.' },
+    { term: '디카페인 (Decaf)', easy: '커피 맛은 그대로인데 밤에 잠이 안 오는 성분(카페인)만 쏙 뺀 커피예요.' },
+    { term: '에스프레소 샷 (Shot)', easy: '진하게 짜낸 커피 원액이에요. "샷 추가"는 커피를 더 진하게 타달라는 뜻이에요.' },
+    { term: '시럽 (Syrup) / 당도', easy: '음료를 달콤하게 해주는 설탕물이에요. 당뇨나 건강이 걱정되시면 "안 달게"를 고르세요.' },
+    { term: '카페라떼 (Latte)', easy: '진한 커피 원액에 고소한 우유를 듬뿍 섞은 부드러운 우유커피예요.' },
+    { term: '스무디 & 에이드', easy: '스무디는 과일과 얼음을 갈아 만든 시원한 음료고, 에이드는 과일청에 사이다(탄산수)를 넣은 음료예요.' },
+    { term: '텀블러 (개인 컵)', easy: '집에서 챙겨 온 내 물병이에요. 카페에서 내 물병을 쓰면 300원~500원 할인해 줘요!' },
+    { term: '모바일 쿠폰 (기프티콘)', easy: '자녀나 친구가 카카오톡으로 보내준 선물 사진이에요. 아래 검은 줄무늬(바코드)를 기계에 비추면 계산돼요.' }
+  ];
+
+  // 12명의 다채로운 동네 손님 & 7가지 실전 키오스크 상황 시나리오
+  const clientPool = [
+    {
+      id: 1,
+      name: "동네 단짝 영희 할머니",
+      shortName: "영희 할머니",
+      avatar: "👵",
+      situationTitle: "🌙 밤잠 걱정 디카페인 & 카드 뒤집기",
+      obstacleType: "ad_popup",
+      quote: "순자야! 난 밤에 잠 잘 오게 <span class='mission-hl'>디카페인 아메리카노</span>로, 이 시려우니 <span class='mission-hl'>시원하게(얼음 적게)</span>, <span class='mission-hl'>덜 달게</span> 해서 <span class='mission-hl'>매장에서</span> 마실래~",
+      praise: "역시 내 단짝 순자야! 얼음까지 적게 해서 이도 하나도 안 시리고 구수하니 참 맛있다!",
+      target: {
+        cat: 'coffee', menuId: 'ame', dining: '매장에서', qty: 1,
+        size: '기본 잔', temp: '시원하게', ice: '얼음 적게',
+        caffeine: '디카페인', sweet: '덜 달게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'card', pickupNo: 12
+      }
+    },
+    {
+      id: 2,
+      name: "귀여운 손주 민수",
+      shortName: "손주 민수",
+      avatar: "👦",
+      situationTitle: "🧇 돌발 광고창 닫기 & 휘핑크림 듬뿍",
+      obstacleType: "ad_popup",
+      quote: "할머니! 학원 가면서 마시게 <span class='mission-hl'>포장해서</span>, <span class='mission-hl'>큰 잔</span>으로 <span class='mission-hl'>달콤 딸기 요거트</span>에 <span class='mission-hl'>휘핑크림 듬뿍</span> 올려서 <span class='mission-hl'>달콤하게</span> 사주세요!",
+      praise: "우와 우리 할머니 완전 키오스크 천재세요!! 친구들한테 할머니가 사주셨다고 자랑할래요!",
+      target: {
+        cat: 'juice', menuId: 'smoothie', dining: '포장해서', qty: 1,
+        size: '큰 잔 (듬뿍)', temp: '시원하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달콤하게', milk: '일반 우유', cream: '휘핑크림 듬뿍',
+        payMethod: 'card', pickupNo: 27
+      }
+    },
+    {
+      id: 3,
+      name: "복지관 박 반장님",
+      shortName: "박 반장님",
+      avatar: "👴",
+      situationTitle: "⏱️ 시간 초과 경고창 침착하게 연장하기",
+      obstacleType: "timeout_popup",
+      quote: "순자 씨! 우리 <span class='mission-hl'>매장에서</span> 담소 나누게 <span class='mission-hl'>건강 대추 쌍화차</span>를 <span class='mission-hl'>따뜻하게</span>, 건강 생각해서 <span class='mission-hl'>달지 않게</span> 부탁해요!",
+      praise: "허허, 갑자기 시간 초과 창이 떠서 놀랐을 텐데 당황하지 않고 연장 버튼을 누르시다니 대단하십니다!",
+      target: {
+        cat: 'tea', menuId: 'tea', dining: '매장에서', qty: 1,
+        size: '기본 잔', temp: '따뜻하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달지 않게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'card', pickupNo: 35
+      }
+    },
+    {
+      id: 4,
+      name: "화초가게 최 이장님",
+      shortName: "최 이장님",
+      avatar: "👨‍🌾",
+      situationTitle: "🌾 우유를 속 편한 두유로 바꾸기",
+      obstacleType: "point_phone",
+      quote: "순자 누님! 화초 물 주러 가야 하니 <span class='mission-hl'>포장해서</span>, 우유 대신 <span class='mission-hl'>속 편한 두유</span>로 바꾼 <span class='mission-hl'>부드러운 우유커피</span>를 <span class='mission-hl'>따뜻하게</span> 부탁합니다!",
+      praise: "우유를 두유로 바꾸는 옵션까지 척척 찾으시고 전화번호 적립까지 해주시다니, 이장인 저보다 훨씬 나으십니다!",
+      target: {
+        cat: 'coffee', menuId: 'latte', dining: '포장해서', qty: 1,
+        size: '기본 잔', temp: '따뜻하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달지 않게', milk: '속 편한 두유', cream: '크림 빼기',
+        payMethod: 'card', pickupNo: 41
+      }
+    },
+    {
+      id: 5,
+      name: "문화센터 옥분 이모",
+      shortName: "옥분 이모",
+      avatar: "💃",
+      situationTitle: "➕ 수량 '+' 버튼 눌러 2잔 한꺼번에 주문하기",
+      obstacleType: "multi_qty",
+      quote: "순자 언니! 댄스 교실 짝꿍이랑 같이 <span class='mission-hl'>매장에서</span> 마시게 <span class='mission-hl'>톡톡 레몬 에이드</span>를 <span class='mission-hl'>2잔(수량 2개)</span>으로, <span class='mission-hl'>큰 잔</span>에 <span class='mission-hl'>시원하게</span>, <span class='mission-hl'>달콤하게</span> 부탁해!",
+      praise: "어머 언니! 더하기(+) 버튼으로 2잔 한꺼번에 주문하는 법까지 마스터했구나! 너무 시원하고 맛있다~",
+      target: {
+        cat: 'juice', menuId: 'lemonade', dining: '매장에서', qty: 2,
+        size: '큰 잔 (듬뿍)', temp: '시원하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달콤하게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'card', pickupNo: 53
+      }
+    },
+    {
+      id: 6,
+      name: "옆집 바둑왕 김 어르신",
+      shortName: "김 어르신",
+      avatar: "🧔",
+      situationTitle: "🚨 품절 메뉴 당황하지 않고 다른 메뉴 고르기",
+      obstacleType: "sold_out",
+       soldOutId: "redbean",
+      quote: "순자 여사님! <span class='mission-hl'>매장에서</span> 바둑 두며 먹게 단팥빵이 품절이면 대신 고소한 <span class='mission-hl'>콩고물 인절미 토스트</span>로 하나 부탁드리겠습니다!",
+      praise: "단팥빵이 품절이라 당황하셨을 텐데 인절미 토스트로 센스 있게 바꿔 주문해 주셔서 정말 고맙습니다!",
+      target: {
+        cat: 'dessert', menuId: 'injeolmi', dining: '매장에서', qty: 1,
+        size: '기본 잔', temp: '따뜻하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달콤하게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'card', pickupNo: 64
+      }
+    },
+    {
+      id: 7,
+      name: "효녀 막내딸 지영이",
+      shortName: "막내딸 지영",
+      avatar: "👩",
+      situationTitle: "🎁 카카오톡 모바일 쿠폰(바코드)으로 결제하기",
+      obstacleType: "coupon_pay",
+      quote: "엄마! 내가 카톡으로 보내준 <span class='mission-hl'>모바일 쿠폰</span>으로 계산해 봐! <span class='mission-hl'>매장에서</span> 드시게 <span class='mission-hl'>달콤 바닐라 라떼</span>를 <span class='mission-hl'>따뜻하게</span>, <span class='mission-hl'>달콤하게</span> 골라보세요~",
+      praise: "우와 우리 엄마! 카톡 기프티콘 바코드 스캔해서 결제하는 법까지 성공하셨네! 이제 어디서든 쿠폰 쓰실 수 있겠어요!",
+      target: {
+        cat: 'coffee', menuId: 'vanilla', dining: '매장에서', qty: 1,
+        size: '기본 잔', temp: '따뜻하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달콤하게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'coupon', pickupNo: 77
+      }
+    },
+    {
+      id: 8,
+      name: "등산 동호회 강 대장님",
+      shortName: "강 대장님",
+      avatar: "🧗",
+      situationTitle: "♻️ 내 텀블러(개인 컵) 500원 환경 할인받기",
+      obstacleType: "tumbler_discount",
+      quote: "순자 대원님! 산에 가져가게 <span class='mission-hl'>포장해서(내 텀블러 할인)</span>, <span class='mission-hl'>시원 복숭아 홍차</span>를 <span class='mission-hl'>큰 잔</span>으로 <span class='mission-hl'>시원하게</span>, <span class='mission-hl'>달콤하게</span> 부탁합니다!",
+      praise: "하하! 개인 텀블러 할인 버튼까지 챙겨서 500원이나 아끼시다니, 환경도 지키고 지갑도 지키는 일등 대원입니다!",
+      target: {
+        cat: 'juice', menuId: 'icetea', dining: '포장해서', qty: 1,
+        size: '큰 잔 (듬뿍)', temp: '시원하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달콤하게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'card', pickupNo: 82
+      }
+    },
+    {
+      id: 9,
+      name: "합창단 고운 목소리 정 선생님",
+      shortName: "정 선생님",
+      avatar: "👩‍🏫",
+      situationTitle: "📱 스마트폰 간편결제(삼성페이) 터치 실습",
+      obstacleType: "mobile_pay",
+      quote: "순자 어머님~ 노래 연습 전에 목 풀게 <span class='mission-hl'>매장에서</span> 마실 <span class='mission-hl'>새콤달콤 유자차</span>를 <span class='mission-hl'>따뜻하게</span>, <span class='mission-hl'>달콤하게</span> 고르시고 <span class='mission-hl'>휴대폰 간편결제</span>로 계산해 주세요!",
+      praise: "어머님~ 지갑에서 카드 꺼낼 필요 없이 휴대폰을 톡 대서 계산하는 삼성페이까지 완벽하게 해내셨어요!",
+      target: {
+        cat: 'tea', menuId: 'yuzu', dining: '매장에서', qty: 1,
+        size: '기본 잔', temp: '따뜻하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달콤하게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'mobile', pickupNo: 89
+      }
+    },
+    {
+      id: 10,
+      name: "든든한 맏사위 이 서방",
+      shortName: "맏사위 이서방",
+      avatar: "🤵",
+      situationTitle: "📞 휴대폰 번호 뒷자리 입력해 스탬프 적립하기",
+      obstacleType: "point_phone",
+      quote: "장모님! 운전하면서 마시게 <span class='mission-hl'>포장해서</span>, <span class='mission-hl'>초콜릿 카페모카</span>를 <span class='mission-hl'>시원하게(보통 얼음)</span>, <span class='mission-hl'>휘핑크림 듬뿍</span> 올려 <span class='mission-hl'>달콤하게</span> 사주세요!",
+      praise: "장모님 최고십니다! 키오스크에서 휴대폰 번호 누르고 포인트 적립하는 것까지 이제 선수시네요!",
+      target: {
+        cat: 'coffee', menuId: 'mocha', dining: '포장해서', qty: 1,
+        size: '기본 잔', temp: '시원하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '달콤하게', milk: '일반 우유', cream: '휘핑크림 듬뿍',
+        payMethod: 'card', pickupNo: 91
+      }
+    },
+    {
+      id: 11,
+      name: "한의원 허준 원장님",
+      shortName: "허 원장님",
+      avatar: "👨‍⚕️",
+      situationTitle: "🫚 환절기 보양 차 & 덜 달게 건강 옵션",
+      obstacleType: "timeout_popup",
+      quote: "순자 어르신! 진료실에 가져가게 <span class='mission-hl'>포장해서</span>, 몸을 데우는 <span class='mission-hl'>알싸한 꿀생강차</span>를 <span class='mission-hl'>따뜻하게</span>, 건강을 위해 <span class='mission-hl'>덜 달게</span> 부탁드립니다!",
+      praise: "허허, 당도까지 '덜 달게'로 정확히 조절해 주셔서 보약보다 더 건강한 생강차가 되었습니다!",
+      target: {
+        cat: 'tea', menuId: 'ginger', dining: '포장해서', qty: 1,
+        size: '기본 잔', temp: '따뜻하게', ice: '보통 얼음',
+        caffeine: '일반 커피', sweet: '덜 달게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'card', pickupNo: 95
+      }
+    },
+    {
+      id: 12,
+      name: "새댁 손녀며느리 수진이",
+      shortName: "손녀며느리",
+      avatar: "👰",
+      situationTitle: "🥭 상큼 열대과일 주스 & 얼음 적게 옵션",
+      obstacleType: "coupon_pay",
+      quote: "왕할머니! 제가 드린 <span class='mission-hl'>모바일 쿠폰</span>으로 <span class='mission-hl'>매장에서</span> 같이 마실 <span class='mission-hl'>황금 망고 주스</span>를 <span class='mission-hl'>큰 잔</span>에 <span class='mission-hl'>시원하게(얼음 적게)</span>, <span class='mission-hl'>달콤하게</span> 주문해 봐요~",
+      praise: "왕할머니! 망고 주스 큰 잔에 얼음 적게, 거기에 모바일 쿠폰 결제까지 한 번에 성공하시다니 진짜 멋지세요!",
+      target: {
+        cat: 'juice', menuId: 'mango', dining: '매장에서', qty: 1,
+        size: '큰 잔 (듬뿍)', temp: '시원하게', ice: '얼음 적게',
+        caffeine: '일반 커피', sweet: '달콤하게', milk: '일반 우유', cream: '크림 빼기',
+        payMethod: 'coupon', pickupNo: 99
+      }
+    }
+  ];
+
+  // 유저 성취도 (localStorage 연동으로 새로고침해도 유지)
+  let stampCount = 0;
+  let unlockedBadges = {
+    adMaster: false,
+    diningMaster: false,
+    chipMaster: false,
+    optionMaster: false,
+    couponMaster: false,
+    pointMaster: false
+  };
+
+  function loadProgress() {
+    try {
+      const savedStamps = localStorage.getItem('seniorCafeStamps');
+      const savedBadges = localStorage.getItem('seniorCafeBadges');
+      if (savedStamps !== null) stampCount = parseInt(savedStamps, 10) || 0;
+      if (savedBadges) unlockedBadges = { ...unlockedBadges, ...JSON.parse(savedBadges) };
+    } catch (e) {}
+  }
+
+  function saveProgress() {
+    try {
+      localStorage.setItem('seniorCafeStamps', String(stampCount));
+      localStorage.setItem('seniorCafeBadges', JSON.stringify(unlockedBadges));
+    } catch (e) {}
+  }
+
+  // 게임 상태 변수
+  let currentStep = 1;
+  let speechEnabled = true;
+  let lastSpokenText = "";
+  let currentClient = clientPool[0];
+  let selectedCategory = 'coffee';
+
+  let userSelection = {
+    dining: null,
+    tumblerDiscount: false,
+    menuId: null,
+    menuName: '',
+    price: 0,
+    qty: 1,
+    size: '기본 잔',
+    temp: '따뜻하게',
+    ice: '보통 얼음',
+    caffeine: '일반 커피',
+    sweet: '달지 않게',
+    milk: '일반 우유',
+    cream: '크림 빼기',
+    payMethod: 'card',
+    phoneDigits: ''
+  };
+
+  let diningPopupShown = false;
+  let obstaclePopupShown = false;
+  let cardIsFlippedWrong = true;
+  let couponScanned = false;
+  let mobilePayTagged = false;
+  let pickupCompleted = false;
+
+  // 부드러운 고품질 한국어 음성 탐색 및 TTS 엔진
+  let selectedSoftVoice = null;
+
+  function initSoftVoice() {
+    if (!('speechSynthesis' in window)) return;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return;
+
+    const koVoices = voices.filter(v => v.lang && (v.lang.includes('ko') || v.lang.includes('KO')));
+    if (koVoices.length > 0) {
+      selectedSoftVoice = koVoices.find(v => v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Online'))
+                       || koVoices.find(v => v.name.includes('SunHi') || v.name.includes('Heami') || v.name.includes('Yuna'))
+                       || koVoices[0];
+    }
+  }
+
+  if ('speechSynthesis' in window) {
+    initSoftVoice();
+    window.speechSynthesis.onvoiceschanged = initSoftVoice;
+  }
+
+  function speak(text) {
+    lastSpokenText = text;
+    const bomiMouth = document.getElementById('bomiMouth');
+    if (!speechEnabled || !('speechSynthesis' in window)) {
+      if (bomiMouth) {
+        bomiMouth.classList.add('talking');
+        setTimeout(() => bomiMouth.classList.remove('talking'), 1600);
+      }
+      return;
+    }
+    window.speechSynthesis.cancel();
+    if (!selectedSoftVoice) initSoftVoice();
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR';
+    if (selectedSoftVoice) u.voice = selectedSoftVoice;
+    u.rate = 0.86;
+    u.pitch = 0.98;
+    u.volume = 1.0;
+
+    u.onstart = () => { if (bomiMouth) bomiMouth.classList.add('talking'); };
+    u.onend = () => { if (bomiMouth) bomiMouth.classList.remove('talking'); };
+    u.onerror = () => { if (bomiMouth) bomiMouth.classList.remove('talking'); };
+
+    if (bomiMouth) {
+      bomiMouth.classList.add('talking');
+      setTimeout(() => bomiMouth.classList.remove('talking'), Math.min(4500, text.length * 130));
+    }
+
+    window.speechSynthesis.speak(u);
+  }
+
+  function setAssistant(msg) {
+    document.getElementById('assistantSpeech').innerText = `"${msg}"`;
+    speak(msg);
+  }
+
+  function replayLastSpeech() {
+    playSound('click');
+    if (lastSpokenText) speak(lastSpokenText);
+  }
+
+  // ================= 캐릭터 라이브 스테이지 연출 함수 =================
+  function renderClientSVG(client) {
+    const wrap = document.getElementById('clientSvgWrap');
+    const stageName = document.getElementById('clientStageName');
+    if (!wrap) return;
+    if (stageName) stageName.innerText = client.shortName || "단골 손님";
+
+    let headTopSvg = '';
+    let clothesColor = '#3B82F6';
+    let glassesSvg = '';
+
+    if (client.id === 1) {
+      // 영희 할머니
+      headTopSvg = `<circle cx="40" cy="14" r="10" fill="#CBD5E1"/><circle cx="40" cy="24" r="16" fill="#E2E8F0"/><circle cx="48" cy="12" r="3" fill="#F43F5E"/>`;
+      clothesColor = '#8B5CF6';
+      glassesSvg = `<circle cx="34" cy="34" r="5" fill="none" stroke="#B45309" stroke-width="1.5"/><circle cx="46" cy="34" r="5" fill="none" stroke="#B45309" stroke-width="1.5"/>`;
+    } else if (client.id === 2) {
+      // 손주 민수
+      headTopSvg = `<path d="M 22 26 Q 40 10 58 26 Z" fill="#F59E0B"/><path d="M 38 22 L 64 25 L 56 28 Z" fill="#D97706"/>`;
+      clothesColor = '#2563EB';
+    } else if (client.id === 3) {
+      // 박 반장님
+      headTopSvg = `<rect x="20" y="20" width="40" height="5" rx="2" fill="#475569"/><path d="M 26 21 L 30 10 L 50 10 L 54 21 Z" fill="#64748B"/>`;
+      clothesColor = '#059669';
+      glassesSvg = `<rect x="28" y="30" width="9" height="6" rx="1" fill="none" stroke="#1E293B" stroke-width="1.8"/><rect x="43" y="30" width="9" height="6" rx="1" fill="none" stroke="#1E293B" stroke-width="1.8"/>`;
+    } else if (client.id === 4) {
+      // 최 이장님
+      headTopSvg = `<ellipse cx="40" cy="22" rx="24" ry="5" fill="#FCD34D" stroke="#D97706" stroke-width="1.5"/><path d="M 26 22 Q 40 6 54 22 Z" fill="#FDE68A" stroke="#D97706" stroke-width="1.5"/>`;
+      clothesColor = '#D97706';
+    } else if (client.id === 5) {
+      // 옥분 이모
+      headTopSvg = `<path d="M 20 38 Q 18 14 40 14 Q 62 14 60 38" fill="#78350F"/><circle cx="25" cy="22" r="5" fill="#EC4899"/>`;
+      clothesColor = '#EC4899';
+    } else if (client.id === 6) {
+      // 바둑왕 김 어르신
+      headTopSvg = `<path d="M 23 30 Q 40 12 57 30" fill="#F1F5F9"/><path d="M 35 46 Q 40 53 45 46" fill="#CBD5E1"/>`;
+      clothesColor = '#1E3A8A';
+    } else if (client.id === 7 || client.id === 9 || client.id === 12) {
+      // 막내딸 지영 / 정 선생님 / 손녀며느리
+      headTopSvg = `<path d="M 22 40 Q 20 14 40 14 Q 60 14 58 40" fill="#451A03"/><circle cx="52" cy="22" r="4" fill="#F43F5E"/>`;
+      clothesColor = client.id === 7 ? '#E11D48' : (client.id === 9 ? '#7C3AED' : '#EC4899');
+    } else if (client.id === 8) {
+      // 강 대장님 (등산 모자)
+      headTopSvg = `<path d="M 20 25 Q 40 8 60 25 Z" fill="#16A34A"/><rect x="18" y="23" width="44" height="4" rx="2" fill="#15803D"/>`;
+      clothesColor = '#EA580C';
+    } else {
+      // 이 서방 / 허 원장님
+      headTopSvg = `<path d="M 24 28 Q 40 12 56 28 Z" fill="#1E293B"/>`;
+      clothesColor = client.id === 10 ? '#334155' : '#0D9488';
+      glassesSvg = `<circle cx="34" cy="34" r="5" fill="none" stroke="#475569" stroke-width="1.5"/><circle cx="46" cy="34" r="5" fill="none" stroke="#475569" stroke-width="1.5"/>`;
+    }
+
+    wrap.innerHTML = `
+      <svg class="char-svg" viewBox="0 0 80 78" width="100%" height="100%">
+        <path d="M 18 76 Q 40 52 62 76 Z" fill="${clothesColor}"/>
+        <path d="M 33 56 L 40 66 L 47 56" fill="#FEF3C7"/>
+        <circle cx="40" cy="36" r="15" fill="#FDE68A"/>
+        ${headTopSvg}
+        <g class="char-eyes">
+          <circle cx="34" cy="34" r="2.2" fill="#1E293B"/>
+          <circle cx="46" cy="34" r="2.2" fill="#1E293B"/>
+        </g>
+        ${glassesSvg}
+        <circle cx="28" cy="39" r="3" fill="#FCA5A5" opacity="0.65"/>
+        <circle cx="52" cy="39" r="3" fill="#FCA5A5" opacity="0.65"/>
+        <path d="M 35 44 Q 40 49 45 44" fill="none" stroke="#991B1B" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    `;
+  }
+
+  function sunjaTapKiosk(screenColor = '#38BDF8') {
+    const arm = document.getElementById('sunjaArm');
+    const screen = document.getElementById('miniKioskScreen');
+    if (arm) {
+      arm.classList.remove('tapping');
+      void arm.offsetWidth;
+      arm.classList.add('tapping');
+      setTimeout(() => arm.classList.remove('tapping'), 520);
+    }
+    if (screen) {
+      screen.setAttribute('fill', screenColor);
+      setTimeout(() => screen.setAttribute('fill', '#38BDF8'), 600);
+    }
+  }
+
+  function triggerStageReaction(state, sunjaEmote, bomiEmote, clientEmote) {
+    const actors = ['actorClient', 'actorSunja', 'actorBomi'];
+    actors.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('state-happy', 'state-dancing', 'state-surprised');
+      void el.offsetWidth;
+      if (state) el.classList.add(state);
+    });
+
+    const sBubble = document.getElementById('sunjaEmoteBubble');
+    const bBubble = document.getElementById('bomiEmoteBubble');
+    const cBubble = document.getElementById('clientEmoteBubble');
+
+    if (sBubble && sunjaEmote) sBubble.innerText = sunjaEmote;
+    if (bBubble && bomiEmote) bBubble.innerText = bomiEmote;
+    if (cBubble && clientEmote) cBubble.innerText = clientEmote;
+
+    if (state === 'state-happy' || state === 'state-dancing') {
+      spawnStageParticles('actorSunja', '❤️');
+      spawnStageParticles('actorBomi', '✨');
+    }
+  }
+
+  function spawnStageParticles(actorId, emoji) {
+    const actor = document.getElementById(actorId);
+    if (!actor) return;
+    for (let i = 0; i < 2; i++) {
+      const p = document.createElement('div');
+      p.className = 'floating-particle';
+      p.innerText = emoji;
+      p.style.left = `${18 + Math.random() * 36}px`;
+      p.style.top = `${10 + i * 8}px`;
+      actor.appendChild(p);
+      setTimeout(() => p.remove(), 950);
+    }
+  }
+
+  function interactWithActor(who) {
+    playSound('correct');
+    if (who === 'sunja') {
+      sunjaTapKiosk('#FDE047');
+      triggerStageReaction('state-happy', '나 잘하지? 😊', '최고예요! 👍', '멋져요! 👏');
+      setAssistant("김순자 어르신: '호호호~ 천천히 글씨를 읽으면서 누르니까 키오스크도 아무것도 아니네!'");
+    } else if (who === 'bomi') {
+      triggerStageReaction('state-dancing', '우리 손녀 최고! ❤️', '할머니 사랑해요! 💕', '보기 좋아요~ 🌸');
+      setAssistant("손녀 보미: '할머니! 모르는 단어가 나오면 맨 위 [용어사전] 버튼을 눌러보세요~'");
+    } else if (who === 'client') {
+      triggerStageReaction('state-happy', '잠깐만 기다려~ 👆', '정성껏 모실게요! ☕', '고마워요! 😍');
+      setAssistant(`${currentClient.name}: '순자 씨만 믿어요! 노란 쪽지에 적힌 대로 부탁해요~'`);
+    }
+  }
+
+  function toggleSpeech() {
+    speechEnabled = !speechEnabled;
+    const btn = document.getElementById('speechBtn');
+    btn.innerText = speechEnabled ? "🔊 켬" : "🔇 끔";
+    if (!speechEnabled) window.speechSynthesis.cancel();
+    else speak("안내 음성을 켰습니다.");
+  }
+
+  function updateHeaderProfile() {
+    let title = "🌱 새싹 손님 (김순자 어르신)";
+    if (stampCount >= 3) title = "☕ 주문의 달인 (김순자 어르신)";
+    if (stampCount >= 6) title = "🎯 키오스크 명사수 (김순자 어르신)";
+    if (stampCount >= 10) title = "👑 명예 단골왕 (김순자 어르신)";
+
+    document.getElementById('userLevelTag').innerText = title;
+    document.getElementById('stampBadgeText').innerText = `${stampCount} / 10개 ☕`;
+  }
+
+  function startMissionWithClient(clientObj) {
+    playSound('correct');
+    currentClient = clientObj;
+
+    renderClientSVG(currentClient);
+    triggerStageReaction('state-happy', '어서 와요~ 👋', '환영합니다! ☕', '주문 부탁해요!');
+
+    const bomiArm = document.getElementById('bomiArm');
+    if (bomiArm) bomiArm.classList.remove('making');
+
+    document.getElementById('clientNameTag').innerText = `${currentClient.avatar} ${currentClient.name}`;
+    document.getElementById('situationBadgeTag').innerText = currentClient.situationTitle;
+    document.getElementById('missionQuoteText').innerHTML = `"${currentClient.quote}"`;
+
+    currentStep = 1;
+    // 품절 시나리오거나 일반 시나리오일 때 기본 탭 설정
+    selectedCategory = currentClient.target.cat;
+    diningPopupShown = false;
+    obstaclePopupShown = false;
+    cardIsFlippedWrong = true;
+    couponScanned = false;
+    mobilePayTagged = false;
+    pickupCompleted = false;
+
+    userSelection = {
+      dining: null,
+      tumblerDiscount: false,
+      menuId: null,
+      menuName: '',
+      price: 0,
+      qty: 1,
+      size: '기본 잔',
+      temp: '따뜻하게',
+      ice: '보통 얼음',
+      caffeine: '일반 커피',
+      sweet: '달지 않게',
+      milk: '일반 우유',
+      cream: '크림 빼기',
+      payMethod: currentClient.target.payMethod || 'card',
+      phoneDigits: ''
+    };
+
+    document.getElementById('kioskFooter').style.display = 'flex';
+    setAssistant(`새 손님이 오셨어요! [${currentClient.name}]의 부탁을 읽어보시고 메뉴를 골라보세요!`);
+    renderStep1();
+  }
+
+  function generateNewRandomMission() {
+    const others = clientPool.filter(c => c.id !== currentClient.id);
+    const nextClient = others[Math.floor(Math.random() * others.length)] || clientPool[0];
+    startMissionWithClient(nextClient);
+  }
+
+  function updateStepUI() {
+    for (let i = 1; i <= 4; i++) {
+      const node = document.getElementById(`node${i}`);
+      node.classList.remove('active', 'done');
+      if (i === currentStep) node.classList.add('active');
+      else if (i < currentStep) node.classList.add('done');
+    }
+    document.getElementById('backBtn').style.visibility = (currentStep === 1 || currentStep === 4) ? 'hidden' : 'visible';
+  }
+
+  // ================= 1단계: 메뉴 선택 & 수량 조절 & 품절 대처 =================
+  function renderStep1() {
+    updateStepUI();
+    document.getElementById('forwardBtn').innerText = "다음 단계 ➡️";
+    const container = document.getElementById('gameViewport');
+    const targetCat = currentClient.target.cat;
+
+    let html = `
+      <div class="senior-tip-badge">
+        <span>⚠️ <strong>[실수 방지 1위]</strong> 찾는 메뉴가 없으면 위의 <strong>4가지 종류 탭</strong>을 눌러보세요!</span>
+      </div>
+
+      <div class="category-tabs">
+        <button class="cat-tab-btn ${selectedCategory === 'coffee' ? 'active' : ''} ${selectedCategory !== 'coffee' && targetCat === 'coffee' ? 'target-cat-hint' : ''}" onclick="switchCategory('coffee')">
+          ☕ 커피
+        </button>
+        <button class="cat-tab-btn ${selectedCategory === 'tea' ? 'active' : ''} ${selectedCategory !== 'tea' && targetCat === 'tea' ? 'target-cat-hint' : ''}" onclick="switchCategory('tea')">
+          🍵 전통차
+        </button>
+        <button class="cat-tab-btn ${selectedCategory === 'juice' ? 'active' : ''} ${selectedCategory !== 'juice' && targetCat === 'juice' ? 'target-cat-hint' : ''}" onclick="switchCategory('juice')">
+          🍓 스무디
+        </button>
+        <button class="cat-tab-btn ${selectedCategory === 'dessert' ? 'active' : ''} ${selectedCategory !== 'dessert' && targetCat === 'dessert' ? 'target-cat-hint' : ''}" onclick="switchCategory('dessert')">
+          🥐 디저트
+        </button>
+      </div>
+
+      <div class="menu-grid">
+    `;
+
+    const filteredMenus = menuDatabase.filter(m => m.cat === selectedCategory);
+    filteredMenus.forEach(item => {
+      const isSel = userSelection.menuId === item.id ? 'selected' : '';
+      const isSoldOut = currentClient.soldOutId === item.id;
+      const isTarget = currentClient.target.menuId === item.id;
+
+      html += `
+        <div class="menu-card ${isSel} ${isSoldOut ? 'sold-out-card' : ''}" onclick="selectMenuItem('${item.id}', '${item.name}', ${item.price}, ${isSoldOut})">
+          ${isSoldOut ? `<div class="sold-out-ribbon">🚨 품절</div>` : ''}
+          ${isTarget ? `<div class="menu-target-badge">★손님주문</div>` : ''}
+          <div class="menu-icon-box">${item.icon}</div>
+          <div class="menu-name">${item.name}</div>
+          <div class="menu-desc">${item.desc}</div>
+          <div class="menu-price">${item.price.toLocaleString()}원</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    // 잘못된 메뉴를 골랐을 때 삭제 복구 박스
+    if (userSelection.menuId && userSelection.menuId !== currentClient.target.menuId) {
+      const targetObj = menuDatabase.find(m => m.id === currentClient.target.menuId);
+      html += `
+        <div class="cart-check-box">
+          <div class="cart-warning-text">
+            ⚠️ <strong>주문서와 달라요!</strong> 손님은 <strong>[${targetObj.name}]</strong>을 부탁했어요!
+          </div>
+          <button class="cart-delete-btn" onclick="clearWrongSelection()">🗑️ 삭제 후 다시 선택</button>
+        </div>
+      `;
+    } else if (userSelection.menuId) {
+      // 올바른 메뉴를 골랐을 때 수량(+/-) 조절 바 표시
+      const needMoreQty = userSelection.qty < currentClient.target.qty;
+      const totalItemPrice = userSelection.price * userSelection.qty;
+      html += `
+        <div class="cart-status-bar">
+          <div>
+            <div style="font-size:12px; font-weight:900; color:#1E293B;">🛒 선택한 메뉴: <span style="color:#EA580C;">${userSelection.menuName}</span></div>
+            <div style="font-size:11px; color:#64748B;">
+              ${needMoreQty ? `<span style="color:#DC2626; font-weight:900;">👆 손님이 ${currentClient.target.qty}잔을 부탁했어요! 오른쪽 [+]를 누르세요!</span>` : `합계 금액: <strong>${totalItemPrice.toLocaleString()}원</strong>`}
+            </div>
+          </div>
+          <div class="qty-control-group">
+            <button class="qty-btn" onclick="changeQuantity(-1)">−</button>
+            <div class="qty-number">${userSelection.qty}개</div>
+            <button class="qty-btn ${needMoreQty ? 'highlight-plus' : ''}" onclick="changeQuantity(1)">+</button>
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+  }
+
+  function switchCategory(cat) {
+    playSound('click');
+    sunjaTapKiosk('#FDE047');
+    selectedCategory = cat;
+    renderStep1();
+  }
+
+  function selectMenuItem(id, name, price, isSoldOut) {
+    if (isSoldOut) {
+      playSound('error');
+      sunjaTapKiosk('#F87171');
+      triggerStageReaction('state-surprised', '어머 다 팔렸네! 😲', '품절이에요~ 💦', '인절미 토스트로요!');
+      setAssistant(`어르신! [${name}]은 오늘 다 팔려서 '품절'이에요! 손님이 대신 부탁하신 [콩고물 인절미 토스트]를 눌러보세요~`);
+      return;
+    }
+
+    userSelection.menuId = id;
+    userSelection.menuName = name;
+    userSelection.price = price;
+    userSelection.qty = 1;
+    playSound('click');
+
+    if (id === currentClient.target.menuId) {
+      playSound('correct');
+      sunjaTapKiosk('#4ADE80');
+      if (currentClient.target.qty > 1) {
+        triggerStageReaction('state-happy', '2잔으로 늘리자! ➕', '[+] 버튼 누르세요!', '2잔 부탁해요~ ✌️');
+        setAssistant(`잘 찾으셨어요! 손님이 [${currentClient.target.qty}잔]을 부탁하셨으니 아래 더하기(+) 버튼을 눌러 ${currentClient.target.qty}개로 맞춰주세요!`);
+      } else {
+        triggerStageReaction('state-happy', '찾았다! 👆', '정답이에요! 👏', '맞아요 그거! 😍');
+        setAssistant(`참 잘하셨어요, 어르신! [${name}]을 쏙 찾으셨네요~ 아래 [다음 단계] 버튼을 눌러주세요.`);
+      }
+    } else {
+      playSound('error');
+      sunjaTapKiosk('#F87171');
+      triggerStageReaction('state-surprised', '어머 실수! 💦', '다시 골라봐요~', '그 메뉴가 아닌데😅');
+      setAssistant(`아이쿠, 괜찮아요! 손님이 부탁하신 메뉴와 달라요. 아래 빨간 [삭제 후 다시 선택] 버튼을 눌러 바로잡아 보세요.`);
+    }
+    renderStep1();
+  }
+
+  function changeQuantity(delta) {
+    playSound('click');
+    const nextQty = userSelection.qty + delta;
+    if (nextQty < 1 || nextQty > 5) return;
+    userSelection.qty = nextQty;
+    sunjaTapKiosk('#4ADE80');
+
+    if (userSelection.qty === currentClient.target.qty) {
+      playSound('correct');
+      triggerStageReaction('state-happy', `${userSelection.qty}개 완료! ✌️`, '수량 딱 맞아요! 👍', '고마워요 언니! 😍');
+      setAssistant(`완벽해요! 손님이 부탁하신 대로 [${userSelection.qty}개]로 맞추셨어요! 이제 아래 [다음 단계]를 눌러주세요.`);
+    }
+    renderStep1();
+  }
+
+  function clearWrongSelection() {
+    playSound('click');
+    sunjaTapKiosk('#38BDF8');
+    triggerStageReaction('state-happy', '지우고 다시! ✨', '잘하셨어요! 👍', '천천히 골라요~');
+    userSelection.menuId = null;
+    userSelection.menuName = '';
+    userSelection.price = 0;
+    userSelection.qty = 1;
+    setAssistant("잘 지우셨어요! 이제 손님이 부탁하신 메뉴(★손님주문)를 차근차근 다시 콕 눌러주세요~");
+    renderStep1();
+  }
+
+  // ================= 상황 팝업 1: 매장 vs 포장 (& 내 텀블러 할인) =================
+  function showDiningChoicePopup(callback) {
+    playSound('click');
+    sunjaTapKiosk('#FBBF24');
+    const isTumblerCase = currentClient.obstacleType === 'tumbler_discount';
+    triggerStageReaction('', '어디서 마시지? 🤔', '쪽지를 보세요! 💡', `${currentClient.target.dining}요!`);
+    setAssistant(isTumblerCase
+      ? "등산 대장님이 개인 물병(텀블러)을 가져오셨대요! [내 텀블러 포장 (500원 할인)] 버튼을 눌러보세요!"
+      : "매장에서 드실지, 포장해 가실지 손님의 쪽지를 보고 골라보세요!");
+
+    const modalArea = document.getElementById('modalContainer');
+    modalArea.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal-card">
+          <div style="font-size:38px; margin-bottom:2px;">🏪</div>
+          <h2 style="font-size:19px; color:#1E293B; margin-bottom:4px;">어디서 드시겠습니까?</h2>
+          <div style="font-size:13.5px; color:#4B5563; margin-bottom:8px;">
+            손님 요청: "<strong style="color:#EA580C;">${currentClient.target.dining}${isTumblerCase ? ' (내 텀블러 할인)' : ''}</strong>"
+          </div>
+          <div class="dining-choice-row">
+            <button class="dining-choice-btn ${currentClient.target.dining === '매장에서' ? 'recommended-choice' : ''}" onclick="chooseDining('매장에서', false)">
+              <div style="font-size:32px;">☕</div>
+              <div style="font-size:15px; font-weight:900; margin-top:2px;">매장에서<br>마시기</div>
+              <div style="font-size:10.5px; color:#64748B; margin-top:2px;">(머그잔 제공)</div>
+            </button>
+            <button class="dining-choice-btn ${currentClient.target.dining === '포장해서' && !isTumblerCase ? 'recommended-choice' : ''}" onclick="chooseDining('포장해서', false)">
+              <div style="font-size:32px;">🥤</div>
+              <div style="font-size:15px; font-weight:900; margin-top:2px;">들고 가기<br>(일회용컵 포장)</div>
+              <div style="font-size:10.5px; color:#64748B; margin-top:2px;">(밖으로 이동)</div>
+            </button>
+          </div>
+          ${isTumblerCase ? `
+            <button style="width:100%; padding:11px; border-radius:14px; border:3px solid #10B981; background:#ECFDF5; color:#065F46; font-size:15px; font-weight:900; cursor:pointer; margin-top:4px;" onclick="chooseDining('포장해서', true)">
+              ♻️ 내 텀블러(개인 컵)에 포장하기 (500원 즉시 할인! ★추천)
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    window.currentDiningCallback = callback;
+  }
+
+  function chooseDining(choice, useTumbler) {
+    userSelection.dining = choice;
+    userSelection.tumblerDiscount = useTumbler;
+    playSound('click');
+    sunjaTapKiosk('#4ADE80');
+    document.getElementById('modalContainer').innerHTML = '';
+
+    if (choice === currentClient.target.dining) {
+      playSound('correct');
+      unlockedBadges.diningMaster = true;
+      saveProgress();
+      triggerStageReaction('state-happy', useTumbler ? '500원 할인! ♻️' : `${choice} 선택! ✅`, '완벽해요! 💯', '센스 만점! 👍');
+      setAssistant(useTumbler
+        ? "우와! 내 텀블러 할인으로 500원이나 절약하셨어요! 정말 알뜰하셔요~"
+        : `맞아요! 손님이 [${choice}] 드신다고 하셨죠! 완벽해요!`);
+    } else {
+      setAssistant(`손님은 [${currentClient.target.dining}]을 원하셨지만 계속 진행해 볼게요!`);
+    }
+
+    if (window.currentDiningCallback) window.currentDiningCallback();
+  }
+
+  // ================= 상황 팝업 2: 돌발 디저트 광고 또는 시간 초과 연장 팝업 =================
+  function triggerSituationPopup(callback) {
+    if (currentClient.obstacleType === 'timeout_popup') {
+      showTimeoutWarningPopup(callback);
+    } else {
+      showAdObstaclePopup(callback);
+    }
+  }
+
+  function showAdObstaclePopup(callback) {
+    playSound('error');
+    sunjaTapKiosk('#F87171');
+    triggerStageReaction('state-surprised', '웬 광고람?! 😲', '창 닫기 눌러요! 🚨', '광고는 닫아요~');
+    setAssistant("어머나! 갑자기 화면에 추천 메뉴 광고 창이 떴어요! 당황하지 마시고 빨간 [안 살래요 (창 닫기)] 버튼을 눌러보세요!");
+
+    const modalArea = document.getElementById('modalContainer');
+    modalArea.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal-card" style="border:4px solid #F59E0B;">
+          <div style="font-size:44px; margin-bottom:2px;">🧇</div>
+          <h2 style="font-size:18px; color:#B45309; margin-bottom:4px;">[돌발! 키오스크 추가 구매 광고]</h2>
+          <div style="font-size:14.5px; color:#1E293B; line-height:1.35; margin-bottom:8px;">
+            "달콤한 벨기에 와플(3,500원)도<br>장바구니에 함께 담으시겠습니까?"
+          </div>
+          <div style="font-size:11.5px; color:#78350F; background:#FEF3C7; padding:6px; border-radius:8px; margin-bottom:10px; text-align:left;">
+            💡 <strong>[어르신 실전 팁]</strong> 요즘 키오스크는 결제 전에 이런 추천 광고가 자주 뜹니다. 원치 않으시면 <strong>[건너뛰기 / 닫기]</strong>를 누르시면 됩니다!
+          </div>
+          <button style="background:#EF4444; color:white; border:none; padding:12px; font-size:15.5px; font-weight:900; border-radius:12px; width:100%; cursor:pointer;" onclick="dismissObstaclePopup()">
+            ❌ 안 살래요! (광고 창 닫기)
+          </button>
+        </div>
+      </div>
+    `;
+    window.currentObstacleCallback = callback;
+  }
+
+  function showTimeoutWarningPopup(callback) {
+    playSound('error');
+    sunjaTapKiosk('#F87171');
+    triggerStageReaction('state-surprised', '시간이 모자라?! ⏱️', '연장하기 눌러요! 🚨', '천천히 하세요~');
+    setAssistant("어머! 천천히 고르다 보니 키오스크에 [시간 초과 안내]가 떴어요! 파란 [시간 연장하기] 버튼을 콕 눌러 계속 주문해 보세요!");
+
+    const modalArea = document.getElementById('modalContainer');
+    modalArea.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal-card" style="border:4px solid #2563EB;">
+          <div style="font-size:44px; margin-bottom:2px;">⏱️</div>
+          <h2 style="font-size:18px; color:#1D4ED8; margin-bottom:4px;">[실전 상황! 입력 시간 초과 알림]</h2>
+          <div style="font-size:14.5px; color:#1E293B; line-height:1.35; margin-bottom:8px;">
+            "선택 시간이 <strong style="color:#DC2626;">5초</strong> 남았습니다.<br>주문을 계속 진행하시겠습니까?"
+          </div>
+          <div style="font-size:11.5px; color:#1E3A8A; background:#DBEAFE; padding:6px; border-radius:8px; margin-bottom:10px; text-align:left;">
+            💡 <strong>[어르신 실전 팁]</strong> 키오스크에서 메뉴를 천천히 읽다 보면 이 창이 뜹니다. 가만히 두면 처음 화면으로 돌아가버리니 꼭 <strong>[연장하기 / 계속하기]</strong>를 눌러주세요!
+          </div>
+          <button style="background:#2563EB; color:white; border:none; padding:12px; font-size:15.5px; font-weight:900; border-radius:12px; width:100%; cursor:pointer;" onclick="dismissObstaclePopup()">
+            ⏳ 네! 시간 연장하고 계속 주문하기
+          </button>
+        </div>
+      </div>
+    `;
+    window.currentObstacleCallback = callback;
+  }
+
+  function dismissObstaclePopup() {
+    playSound('correct');
+    sunjaTapKiosk('#4ADE80');
+    unlockedBadges.adMaster = true;
+    saveProgress();
+    document.getElementById('modalContainer').innerHTML = '';
+    triggerStageReaction('state-happy', '침착하게 해결! 🛡️', '대단하셔요! 👏', '휴~ 다행이다!');
+    setAssistant("침착하게 돌발 창을 해결하셨네요! 이제 2단계에서 손님 입맛에 맞게 옵션을 골라보세요.");
+    if (window.currentObstacleCallback) window.currentObstacleCallback();
+  }
+
+  // ================= 2단계: 옵션 조절 =================
+  function renderStep2() {
+    updateStepUI();
+    document.getElementById('forwardBtn').innerText = "옵션 완료 ➡️";
+    const container = document.getElementById('gameViewport');
+
+    const bomiArm = document.getElementById('bomiArm');
+    if (bomiArm) bomiArm.classList.add('making');
+
+    const selectedMenuObj = menuDatabase.find(m => m.id === userSelection.menuId) || menuDatabase[0];
+    const isIce = userSelection.temp === '시원하게';
+    const isLarge = userSelection.size === '큰 잔 (듬뿍)';
+    const hasCream = userSelection.cream === '휘핑크림 듬뿍';
+    const isDecaf = userSelection.caffeine === '디카페인';
+    let liquidColor = selectedMenuObj.liquid;
+
+    if (selectedMenuObj.cat === 'dessert') {
+      container.innerHTML = `
+        <div class="senior-tip-badge">
+          <span>💡 <strong>[디저트 꿀팁]</strong> 빵과 토스트는 따뜻하게 데워서 포크와 함께 제공됩니다!</span>
+        </div>
+        <div style="text-align:center; padding:16px 10px; background:white; border-radius:16px; border:2px solid #E2E8F0; flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+          <div style="font-size:54px; margin-bottom:6px;">${selectedMenuObj.icon}</div>
+          <h2 style="font-size:19px; color:#1E293B;">[${userSelection.dining}] ${userSelection.menuName} (${userSelection.qty}개)</h2>
+          <p style="font-size:13.5px; color:#64748B; margin-top:6px;">
+            노릇노릇하고 따뜻하게 데워서 준비해 드릴게요!<br>아래 <strong>[옵션 완료]</strong> 버튼을 눌러 결제로 넘어가세요.
+          </p>
+          <div style="margin-top:12px; font-size:16px; font-weight:900; color:#EA580C;">
+            결제 예정 금액: ${getFinalPrice().toLocaleString()}원
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="senior-tip-badge">
+        <span>⚠️ <strong>[실수 방지 2위]</strong> 주황색 <strong>[★손님요청]</strong> 표시가 붙은 옵션을 꼼꼼히 맞춰보세요!</span>
+      </div>
+
+      <div class="cup-simulation-container">
+        <div class="cup-graphic ${isLarge ? 'large-cup' : ''}">
+          ${hasCream ? `<div class="whipped-cream-top">☁️</div>` : ''}
+          ${isDecaf ? `<div class="decaf-cup-tag">🌿디카페인</div>` : ''}
+          <div class="coffee-liquid" style="background:${liquidColor};">
+            ${isIce ? `
+              <div class="ice-cube ice-1"></div>
+              ${userSelection.ice !== '얼음 적게' ? `
+                <div class="ice-cube ice-2"></div>
+                <div class="ice-cube ice-3"></div>
+              ` : ''}
+            ` : `
+              <div class="steam-wave">♨️</div>
+            `}
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:11px; font-weight:bold; color:#EA580C;">
+            [${userSelection.dining || '포장'}${userSelection.tumblerDiscount ? '·텀블러할인' : ''}] ${userSelection.qty}잔 제조 미리보기:
+          </div>
+          <div style="font-size:15px; font-weight:900; color:#1E293B; margin:1px 0;">
+            ${userSelection.size} · ${userSelection.temp} ${userSelection.menuName}
+          </div>
+          <div style="font-size:11px; color:#64748B; line-height:1.3;">
+            ${userSelection.caffeine !== '일반 커피' ? `<span style="color:#059669; font-weight:bold;">${userSelection.caffeine}</span> | ` : ''}
+            ${isIce ? `<span style="color:#2563EB; font-weight:bold;">${userSelection.ice}</span> | ` : ''}
+            단맛: <strong>${userSelection.sweet}</strong> | 우유: <strong>${userSelection.milk}</strong>
+            ${hasCream ? ` | <span style="color:#B45309; font-weight:bold;">휘핑크림</span>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="option-section-title">🥤 1. 컵 크기 선택</div>
+      <div class="option-btn-row">
+        <button class="opt-choice-btn ${userSelection.size === '기본 잔' ? 'active' : ''} ${currentClient.target.size === '기본 잔' ? 'recommended-target' : ''}" onclick="applyOption('size', '기본 잔')">
+          ☕ 기본 잔 (보통)
+        </button>
+        <button class="opt-choice-btn ${userSelection.size === '큰 잔 (듬뿍)' ? 'active' : ''} ${currentClient.target.size === '큰 잔 (듬뿍)' ? 'recommended-target' : ''}" onclick="applyOption('size', '큰 잔 (듬뿍)')">
+          🥛 큰 잔 (양 넉넉히)
+        </button>
+      </div>
+
+      <div class="option-section-title">🌡️ 2. 온도 & 얼음 양</div>
+      <div class="option-btn-row">
+        <button class="opt-choice-btn ${userSelection.temp === '따뜻하게' ? 'active' : ''} ${currentClient.target.temp === '따뜻하게' ? 'recommended-target' : ''}" onclick="applyOption('temp', '따뜻하게')">
+          🔴 따뜻하게
+        </button>
+        <button class="opt-choice-btn ${userSelection.temp === '시원하게' && userSelection.ice === '보통 얼음' ? 'active' : ''} ${currentClient.target.temp === '시원하게' && currentClient.target.ice === '보통 얼음' ? 'recommended-target' : ''}" onclick="applyIceOption('보통 얼음')">
+          🔵 시원하게 (보통)
+        </button>
+        <button class="opt-choice-btn ${userSelection.temp === '시원하게' && userSelection.ice === '얼음 적게' ? 'active' : ''} ${currentClient.target.temp === '시원하게' && currentClient.target.ice === '얼음 적게' ? 'recommended-target' : ''}" onclick="applyIceOption('얼음 적게')">
+          🧊 얼음 적게 (이 안 시림)
+        </button>
+      </div>
+
+      ${selectedMenuObj.cat === 'coffee' ? `
+        <div class="option-section-title">🌿 3. 카페인 조절 (밤잠 걱정 없을 때)</div>
+        <div class="option-btn-row">
+          <button class="opt-choice-btn ${userSelection.caffeine === '일반 커피' ? 'active' : ''} ${currentClient.target.caffeine === '일반 커피' ? 'recommended-target' : ''}" onclick="applyOption('caffeine', '일반 커피')">
+            ☕ 일반 커피
+          </button>
+          <button class="opt-choice-btn ${userSelection.caffeine === '디카페인' ? 'active' : ''} ${currentClient.target.caffeine === '디카페인' ? 'recommended-target' : ''}" onclick="applyOption('caffeine', '디카페인')">
+            🌿 디카페인 (카페인 쏙 뺌)
+          </button>
+        </div>
+      ` : ''}
+
+      <div class="option-section-title">🍯 4. 단맛(시럽) 조절</div>
+      <div class="option-btn-row">
+        <button class="opt-choice-btn ${userSelection.sweet === '달지 않게' ? 'active' : ''} ${currentClient.target.sweet === '달지 않게' ? 'recommended-target' : ''}" onclick="applyOption('sweet', '달지 않게')">
+          ❌ 달지 않게
+        </button>
+        <button class="opt-choice-btn ${userSelection.sweet === '덜 달게' ? 'active' : ''} ${currentClient.target.sweet === '덜 달게' ? 'recommended-target' : ''}" onclick="applyOption('sweet', '덜 달게')">
+          🍯 덜 달게
+        </button>
+        <button class="opt-choice-btn ${userSelection.sweet === '달콤하게' ? 'active' : ''} ${currentClient.target.sweet === '달콤하게' ? 'recommended-target' : ''}" onclick="applyOption('sweet', '달콤하게')">
+          🍯🍯 달콤하게
+        </button>
+      </div>
+
+      <div class="option-section-title">🥛 5. 우유 변경 & 휘핑크림 토핑</div>
+      <div class="option-btn-row">
+        <button class="opt-choice-btn ${userSelection.milk === '일반 우유' ? 'active' : ''} ${currentClient.target.milk === '일반 우유' ? 'recommended-target' : ''}" onclick="applyOption('milk', '일반 우유')">
+          🥛 일반 우유
+        </button>
+        <button class="opt-choice-btn ${userSelection.milk === '속 편한 두유' ? 'active' : ''} ${currentClient.target.milk === '속 편한 두유' ? 'recommended-target' : ''}" onclick="applyOption('milk', '속 편한 두유')">
+          🌾 속 편한 두유
+        </button>
+        <button class="opt-choice-btn ${userSelection.cream === '휘핑크림 듬뿍' ? 'active' : ''} ${currentClient.target.cream === '휘핑크림 듬뿍' ? 'recommended-target' : ''}" onclick="toggleCreamOption()">
+          ☁️ 휘핑크림 듬뿍
+        </button>
+      </div>
+    `;
+  }
+
+  function applyOption(type, val) {
+    userSelection[type] = val;
+    playSound('splash');
+    sunjaTapKiosk('#4ADE80');
+
+    if (val === currentClient.target[type]) {
+      playSound('correct');
+      triggerStageReaction('state-happy', `${val}! 👌`, '맛있게 탈게요~ 🧋', '딱 내 취향! 😍');
+      setAssistant(`잘하셨어요, 어르신! 손님이 원하시던 [${val}] 옵션을 정확히 고르셨어요~`);
+    } else {
+      triggerStageReaction('', `${val}? 🤔`, '★손님요청을 봐요!', `${currentClient.target[type]}요~`);
+      setAssistant(`손님은 [${currentClient.target[type]}]을 원하셨어요~ 주황색 [★손님요청] 표시를 확인해 보세요.`);
+    }
+    renderStep2();
+  }
+
+  function applyIceOption(iceVal) {
+    userSelection.temp = '시원하게';
+    userSelection.ice = iceVal;
+    playSound('splash');
+    sunjaTapKiosk('#38BDF8');
+
+    if (iceVal === currentClient.target.ice && currentClient.target.temp === '시원하게') {
+      playSound('correct');
+      triggerStageReaction('state-happy', `${iceVal}! 🧊`, '시원하게 준비! ❄️', '딱 좋아요! 😆');
+      setAssistant(`시원하게 [${iceVal}]으로 딱 맞추셨어요, 최고예요!`);
+    } else {
+      setAssistant(`손님의 쪽지에서 온도나 얼음 양을 확인해 보세요~`);
+    }
+    renderStep2();
+  }
+
+  function toggleCreamOption() {
+    userSelection.cream = userSelection.cream === '휘핑크림 듬뿍' ? '크림 빼기' : '휘핑크림 듬뿍';
+    playSound('splash');
+    sunjaTapKiosk('#FDE047');
+    if (userSelection.cream === currentClient.target.cream) {
+      playSound('correct');
+      triggerStageReaction('state-happy', '크림 듬뿍! ☁️', '달콤하게 올릴게요!', '와 맛있겠다! 😋');
+      setAssistant(`휘핑크림 옵션을 딱 맞추셨네요, 참 잘하셨어요!`);
+    }
+    renderStep2();
+  }
+
+  // 상황 팝업 3: 휴대폰 번호 스탬프 적립 팝업 (결제 진입 전)
+  function showPointPhonePopup(callback) {
+    playSound('click');
+    userSelection.phoneDigits = '';
+    triggerStageReaction('', '번호 적립하자! 📱', '1234를 눌러봐요!', '적립도 챙겨요~');
+    setAssistant("결제하기 전에 카페 포인트 적립 창이 떴어요! 연습용 뒷자리 번호 [ 1 - 2 - 3 - 4 ]를 순서대로 누르고 [적립 완료]를 눌러보세요!");
+
+    renderPhoneKeypadModal();
+    window.currentPointCallback = callback;
+  }
+
+  function renderPhoneKeypadModal() {
+    const modalArea = document.getElementById('modalContainer');
+    const displayNum = userSelection.phoneDigits.padEnd(4, '_').split('').join(' ');
+    modalArea.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal-card" style="border:3px solid #10B981;">
+          <div style="font-size:13px; font-weight:900; color:#059669;">📱 [실전 연습] 휴대폰 번호 도장 적립</div>
+          <div style="font-size:12px; color:#475569; margin:3px 0 6px;">
+            연습 번호 <strong style="color:#DC2626;">[ 1 2 3 4 ]</strong>를 눌러 적립해 보세요!
+          </div>
+          <div style="background:#F1F5F9; border:2px solid #94A3B8; border-radius:10px; padding:6px; font-size:20px; font-weight:900; letter-spacing:4px; color:#1E293B; margin-bottom:6px;">
+            010 - **** - <span style="color:#EA580C;">${displayNum}</span>
+          </div>
+          <div class="keypad-grid">
+            ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="keypad-btn" onclick="pressPhoneDigit('${n}')">${n}</button>`).join('')}
+            <button class="keypad-btn" style="font-size:13px; color:#DC2626;" onclick="pressPhoneDigit('clear')">지우기</button>
+            <button class="keypad-btn" onclick="pressPhoneDigit('0')">0</button>
+            <button class="keypad-btn" style="font-size:13px; background:#DCFCE7; border-color:#10B981; color:#15803D;" onclick="submitPhonePoint()">적립완료</button>
+          </div>
+          <button style="background:#E2E8F0; color:#475569; border:none; padding:8px; border-radius:10px; font-size:12px; font-weight:800; width:100%; cursor:pointer;" onclick="skipPhonePoint()">
+            적립 안 하고 바로 결제하기 (건너뛰기)
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function pressPhoneDigit(d) {
+    playSound('click');
+    sunjaTapKiosk('#FDE047');
+    if (d === 'clear') {
+      userSelection.phoneDigits = '';
+    } else if (userSelection.phoneDigits.length < 4) {
+      userSelection.phoneDigits += d;
+    }
+    renderPhoneKeypadModal();
+  }
+
+  function submitPhonePoint() {
+    if (userSelection.phoneDigits.length < 4) {
+      playSound('error');
+      setAssistant("어르신, 숫자 4자리를 모두 눌러주세요! (예: 1, 2, 3, 4)");
+      return;
+    }
+    playSound('correct');
+    unlockedBadges.pointMaster = true;
+    saveProgress();
+    document.getElementById('modalContainer').innerHTML = '';
+    triggerStageReaction('state-happy', '포인트 적립 성공! 🎉', '보너스 적립 완료!', '알뜰하셔라~ 👍');
+    setAssistant(`휴대폰 번호 [${userSelection.phoneDigits}]번으로 카페 포인트 적립에 성공하셨어요! 이제 결제를 진행해 볼까요?`);
+    if (window.currentPointCallback) window.currentPointCallback();
+  }
+
+  function skipPhonePoint() {
+    playSound('click');
+    document.getElementById('modalContainer').innerHTML = '';
+    if (window.currentPointCallback) window.currentPointCallback();
+  }
+
+  function getFinalPrice() {
+    const base = (userSelection.price || 0) * (userSelection.qty || 1);
+    const discount = userSelection.tumblerDiscount ? 500 : 0;
+    return Math.max(0, base - discount);
+  }
+
+  // ================= 3단계: 다중 결제 수단 (신용카드 / 모바일쿠폰 / 삼성페이) =================
+  function renderStep3() {
+    updateStepUI();
+    const container = document.getElementById('gameViewport');
+    const bomiArm = document.getElementById('bomiArm');
+    if (bomiArm) bomiArm.classList.remove('making');
+
+    const targetPay = currentClient.target.payMethod || 'card';
+    const finalPrice = getFinalPrice();
+
+    if (userSelection.payMethod === 'card') {
+      document.getElementById('forwardBtn').innerText = "카드 투입 💳";
+      setAssistant(cardIsFlippedWrong
+        ? "어르신, 카드가 뒷면(검은 띠)으로 뒤집혀 있어요! 카드를 터치해서 앞면의 [금색 네모 칩]이 보이게 뒤집어보세요!"
+        : "금색 칩이 제대로 보이네요! 이제 카드를 콕 눌러 투입구에 쏙 넣어보세요~");
+    } else if (userSelection.payMethod === 'coupon') {
+      document.getElementById('forwardBtn').innerText = "바코드 스캔 🎁";
+      setAssistant("자녀가 카카오톡으로 보내준 모바일 쿠폰이에요! 아래 쿠폰의 [검은 줄무늬 바코드]를 콕 눌러 빨간 스캐너 불빛에 비춰보세요~");
+    } else {
+      document.getElementById('forwardBtn').innerText = "휴대폰 터치 📱";
+      setAssistant("지갑에서 카드를 꺼낼 필요 없는 휴대폰 간편결제(삼성페이)예요! 아래 스마트폰 그림을 콕 눌러 단말기에 터치해 보세요~");
+    }
+
+    let payBodyHtml = '';
+    if (userSelection.payMethod === 'card') {
+      payBodyHtml = `
+        <div class="card-dropzone-box">
+          <div style="font-size:13px; font-weight:900; color:#334155; margin-bottom:4px;">
+            ⬇️ 신용카드 넣는 곳 (투입구) ⬇️
+          </div>
+          <div class="card-slot-opening"></div>
+
+          <div class="playable-card-container" onclick="handlePaymentAction()">
+            <div class="flipper-card ${cardIsFlippedWrong ? 'flipped' : ''}" id="flipperCard">
+              <div class="card-face card-face-front">
+                <div class="card-chip"></div>
+                <div style="font-size:10.5px; background:rgba(255,255,255,0.25); padding:2px 6px; border-radius:6px; align-self:flex-end;">
+                  금색 칩 앞면 ✅
+                </div>
+                <div>
+                  <div style="font-size:12.5px; font-weight:bold;">순자 어르신 카드 💳</div>
+                  <div style="font-size:10px; color:#BFDBFE;">[터치해서 넣기]</div>
+                </div>
+              </div>
+
+              <div class="card-face card-face-back">
+                <div class="magnetic-stripe"></div>
+                <div style="font-size:11.5px; color:#FCA5A5; font-weight:bold; text-align:center;">
+                  ⚠️ 뒷면입니다!<br>(인식 불가)
+                </div>
+                <div style="font-size:10.5px; color:#CBD5E1; text-align:center;">
+                  👆 터치해서 뒤집기
+                </div>
+              </div>
+            </div>
+          </div>
+
+          ${cardIsFlippedWrong ? `
+            <div style="color:#DC2626; font-size:12px; font-weight:900;">
+              🚨 검은 띠가 보이면 안 돼요! 카드를 터치해 뒤집으세요!
+            </div>
+            <button style="background:#F59E0B; color:#78350F; border:none; padding:5px 12px; border-radius:9px; font-size:12.5px; font-weight:900; margin-top:3px; cursor:pointer;" onclick="flipCardDirectly()">
+              🔄 카드 앞면으로 뒤집기 톡!
+            </button>
+          ` : `
+            <div style="color:#059669; font-size:13px; font-weight:900;">
+              ✨ 금색 네모 칩이 보입니다! 카드를 콕 눌러 결제하세요!
+            </div>
+          `}
+        </div>
+      `;
+    } else if (userSelection.payMethod === 'coupon') {
+      payBodyHtml = `
+        <div class="card-dropzone-box" onclick="handlePaymentAction()" style="cursor:pointer; border-color:#F59E0B; background:#FFFBEB;">
+          <div style="font-size:13px; font-weight:900; color:#B45309; margin-bottom:4px;">
+            🔦 바코드 스캐너 (아래 쿠폰을 터치해 비춰주세요)
+          </div>
+          <div style="width:180px; height:8px; background:#EF4444; border-radius:4px; box-shadow:0 0 12px #EF4444; margin-bottom:10px;"></div>
+
+          <div style="background:white; border:2px solid #F59E0B; border-radius:14px; padding:10px 14px; width:210px; box-shadow:0 4px 10px rgba(0,0,0,0.08);">
+            <div style="font-size:11px; font-weight:900; color:#D97706;">💛 카카오톡 모바일 선물 쿠폰</div>
+            <div style="font-size:14px; font-weight:900; color:#1E293B; margin:3px 0;">${userSelection.menuName} 교환권</div>
+            <div style="height:36px; background:repeating-linear-gradient(90deg, #000 0px, #000 3px, #fff 3px, #fff 6px, #000 6px, #000 8px, #fff 8px, #fff 12px); margin:6px 0; border-radius:4px;"></div>
+            <div style="font-size:11px; color:#64748B; font-weight:bold;">8801 - 2345 - 6789</div>
+          </div>
+          <div style="color:#D97706; font-size:12.5px; font-weight:900; margin-top:8px;">
+            👆 쿠폰 바코드를 손가락으로 콕 눌러 스캔하세요!
+          </div>
+        </div>
+      `;
+    } else {
+      payBodyHtml = `
+        <div class="card-dropzone-box" onclick="handlePaymentAction()" style="cursor:pointer; border-color:#2563EB; background:#EFF6FF;">
+          <div style="font-size:13px; font-weight:900; color:#1D4ED8; margin-bottom:6px;">
+            📡 휴대폰 간편결제 (삼성페이/모바일페이) 접촉부
+          </div>
+          <div style="background:#1E293B; color:white; border:3px solid #60A5FA; border-radius:18px; width:130px; height:155px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; align-items:center; box-shadow:0 8px 16px rgba(37,99,235,0.2);">
+            <div style="font-size:10px; color:#93C5FD;">SAMSUNG Pay</div>
+            <div style="font-size:38px;">📱))))</div>
+            <div style="font-size:11.5px; font-weight:900; color:#FDE047;">터치하여 단말기에 대기</div>
+          </div>
+          <div style="color:#1D4ED8; font-size:12.5px; font-weight:900; margin-top:8px;">
+            👆 스마트폰 그림을 콕 누르면 '삑!' 결제가 완료됩니다!
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="senior-tip-badge" style="background:#FEF2F2; border-color:#EF4444; color:#991B1B;">
+        <span>⚠️ <strong>[실수 방지 3위]</strong> 손님이 요청한 결제 수단을 고르고, 승인될 때까지 <strong>3초간 기다려주세요!</strong></span>
+      </div>
+
+      <div class="pay-method-tabs">
+        <button class="pay-tab-btn ${userSelection.payMethod === 'card' ? 'active' : ''} ${targetPay === 'card' ? 'target-pay' : ''}" onclick="switchPayMethod('card')">
+          💳 신용·체크카드
+        </button>
+        <button class="pay-tab-btn ${userSelection.payMethod === 'coupon' ? 'active' : ''} ${targetPay === 'coupon' ? 'target-pay' : ''}" onclick="switchPayMethod('coupon')">
+          🎁 모바일 쿠폰
+        </button>
+        <button class="pay-tab-btn ${userSelection.payMethod === 'mobile' ? 'active' : ''} ${targetPay === 'mobile' ? 'target-pay' : ''}" onclick="switchPayMethod('mobile')">
+          📱 휴대폰 페이
+        </button>
+      </div>
+
+      <div style="background:#FFFBEB; border:2px solid #FCD34D; border-radius:12px; padding:5px 8px; text-align:center; margin-bottom:5px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:11.5px; color:#78350F; font-weight:800; text-align:left;">
+          [${userSelection.dining}] ${userSelection.menuName} (${userSelection.qty}개)
+          ${userSelection.tumblerDiscount ? `<span style="color:#059669;">(텀블러 -500원)</span>` : ''}
+        </div>
+        <div style="font-size:16px; font-weight:900; color:#EA580C;">
+          ${finalPrice.toLocaleString()}원
+        </div>
+      </div>
+
+      ${payBodyHtml}
+    `;
+  }
+
+  function switchPayMethod(method) {
+    playSound('click');
+    sunjaTapKiosk('#38BDF8');
+    userSelection.payMethod = method;
+    renderStep3();
+  }
+
+  function handlePaymentAction() {
+    if (userSelection.payMethod === 'card') {
+      if (cardIsFlippedWrong) {
+        flipCardDirectly();
+      } else {
+        executePayment();
+      }
+    } else if (userSelection.payMethod === 'coupon') {
+      unlockedBadges.couponMaster = true;
+      saveProgress();
+      executePayment();
+    } else {
+      unlockedBadges.couponMaster = true;
+      saveProgress();
+      executePayment();
+    }
+  }
+
+  function flipCardDirectly() {
+    playSound('flip');
+    sunjaTapKiosk('#FDE047');
+    cardIsFlippedWrong = !cardIsFlippedWrong;
+    const cardEl = document.getElementById('flipperCard');
+    if (cardEl) {
+      if (cardIsFlippedWrong) cardEl.classList.add('flipped');
+      else cardEl.classList.remove('flipped');
+    }
+
+    if (!cardIsFlippedWrong) {
+      playSound('correct');
+      unlockedBadges.chipMaster = true;
+      saveProgress();
+      triggerStageReaction('state-happy', '뒤집기 성공! 💳', '금색 칩 확인! 👍', '우와 잘하신다! 👏');
+      setAssistant("아주 잘하셨어요, 어르신! 금색 칩이 앞으로 돌아왔네요~ 이제 카드를 콕 눌러 넣어주세요!");
+    } else {
+      setAssistant("카드가 다시 뒤집혔어요. 금색 칩이 보이게 한 번 더 눌러보세요~");
+    }
+    setTimeout(renderStep3, 380);
+  }
+
+  function executePayment() {
+    playSound('click');
+    sunjaTapKiosk('#4ADE80');
+    triggerStageReaction('state-happy', '결제 중~ 기다리기!', '3초만 기다려요! ⏱️', '두근두근~ ☕');
+
+    const payTitle = userSelection.payMethod === 'card'
+      ? '신용카드 승인 진행 중...'
+      : (userSelection.payMethod === 'coupon' ? '모바일 쿠폰 바코드 스캔 완료!' : '휴대폰 간편결제 승인 중...');
+
+    setAssistant("어르신, 결제가 진행 중이에요~ 삑- 소리가 날 때까지 카드를 절대 먼저 빼지 마시고 잠깐만 기다려 주세요!");
+    const container = document.getElementById('gameViewport');
+    document.getElementById('kioskFooter').style.display = 'none';
+
+    const orderNo = currentClient.target.pickupNo || 17;
+
+    container.innerHTML = `
+      <div style="text-align:center; padding:16px 10px; flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <div style="font-size:42px; margin-bottom:4px;">${userSelection.payMethod === 'card' ? '💳 ➡️ 📥' : (userSelection.payMethod === 'coupon' ? '🎁 ➡️ 🔦' : '📱 ➡️ 📡')}</div>
+        <h2 style="font-size:19px; color:#EA580C; margin-bottom:4px;">${payTitle}</h2>
+        <div style="font-size:16px; color:#DC2626; font-weight:900; margin-bottom:4px; background:#FEE2E2; padding:5px 12px; border-radius:10px; border:2px solid #EF4444;">
+          ✋ 완료될 때까지 잠시만 기다려 주세요!
+        </div>
+
+        <div class="receipt-paper">
+          <div style="font-weight:900; border-bottom:1.5px solid #CBD5E1; padding-bottom:3px; margin-bottom:4px; font-size:13px;">
+            🧾 영수증 [주문번호: <span style="color:#DC2626; font-size:15px;">${orderNo}번</span>]
+          </div>
+          <div>[${userSelection.dining}] ${userSelection.menuName} x ${userSelection.qty}</div>
+          <div style="font-size:10.5px; color:#64748B;">${userSelection.size}, ${userSelection.temp}, ${userSelection.sweet}</div>
+          <div style="font-weight:900; color:#EA580C; margin-top:3px;">${getFinalPrice().toLocaleString()}원 결제성공!</div>
+        </div>
+      </div>
+    `;
+
+    setTimeout(() => {
+      playSound('correct');
+      document.getElementById('kioskFooter').style.display = 'flex';
+      currentStep = 4;
+      renderStep4();
+    }, 2300);
+  }
+
+  // ================= 4단계: 내 주문번호 확인 & 픽업대 수령 & 도장 보상 =================
+  function renderStep4() {
+    updateStepUI();
+    document.getElementById('forwardBtn').innerText = "🎲 다음 손님 만나기!";
+    const container = document.getElementById('gameViewport');
+    playSound('fanfare');
+    launchConfetti();
+
+    triggerStageReaction('state-dancing', '주문 대성공!! 🎉', '할머니 최고!! 🎊', '정말 고마워요! ❤️');
+
+    if (!pickupCompleted) {
+      if (stampCount < 10) {
+        stampCount++;
+        playSound('stamp');
+      }
+      unlockedBadges.optionMaster = true;
+      saveProgress();
+      updateHeaderProfile();
+    }
+
+    const myNo = currentClient.target.pickupNo || 17;
+    const wrongNo1 = myNo - 4;
+    const wrongNo2 = myNo + 5;
+
+    setAssistant(`축하드려요 어르신! 영수증에 적힌 내 주문번호는 [${myNo}번]이에요! 아래 픽업대에서 [${myNo}번 쟁반]을 콕 눌러 음료를 찾아오세요~`);
+
+    container.innerHTML = `
+      <div class="senior-tip-badge" style="background:#ECFDF5; border-color:#10B981; color:#065F46;">
+        <span>💡 <strong>[수령 꿀팁]</strong> 다른 손님 음료와 헷갈리지 않게 내 영수증 번호 <strong>[${myNo}번]</strong>을 꼭 확인하세요!</span>
+      </div>
+
+      <div style="text-align:center; flex:1; display:flex; flex-direction:column; justify-content:space-between; align-items:center;">
+        <div style="width:100%; background:#FFFBEB; border:2px solid #F59E0B; border-radius:14px; padding:6px 10px;">
+          <div style="font-size:12px; font-weight:900; color:#B45309;">🔔 내 영수증 호출 번호는 <span style="font-size:17px; color:#DC2626; text-decoration:underline;">${myNo}번</span> 입니다! 아래에서 내 쟁반을 터치하세요!</div>
+          <div class="pickup-counter-grid">
+            <button class="pickup-tray-btn" onclick="pickOrderTray(${wrongNo1}, ${myNo}, this)">
+              <div style="font-size:20px;">☕</div>
+              <div style="font-size:14px; color:#475569;">${wrongNo1}번 쟁반</div>
+            </button>
+            <button class="pickup-tray-btn correct-tray" onclick="pickOrderTray(${myNo}, ${myNo}, this)">
+              <div style="font-size:22px;">🔔☕</div>
+              <div style="font-size:15px; color:#DC2626;">${myNo}번 쟁반</div>
+            </button>
+            <button class="pickup-tray-btn" onclick="pickOrderTray(${wrongNo2}, ${myNo}, this)">
+              <div style="font-size:20px;">🥤</div>
+              <div style="font-size:14px; color:#475569;">${wrongNo2}번 쟁반</div>
+            </button>
+          </div>
+        </div>
+
+        <div style="background:#ECFDF5; border:2px solid #10B981; border-radius:16px; padding:10px; text-align:center; width:100%;">
+          <div style="font-size:24px; margin-bottom:1px;">${currentClient.avatar}❤️👵</div>
+          <h3 style="color:#065F46; font-size:15.5px; font-weight:900; margin-bottom:2px;">
+            ${currentClient.name}의 감사 인사:
+          </h3>
+          <p style="font-size:12.5px; color:#047857; line-height:1.35; font-weight:bold; word-break:keep-all;">
+            "${currentClient.praise}"
+          </p>
+          <div style="margin-top:5px; padding-top:5px; border-top:1px dashed #A7F3D0; font-size:13px; color:#D97706; font-weight:900;">
+            ☕ 단골 도장 획득! (현재 총 ${stampCount}개 / 10개)
+          </div>
+          <div style="display:flex; gap:6px; justify-content:center; margin-top:5px;">
+            <button style="background:#10B981; color:white; border:none; padding:6px 12px; border-radius:9px; font-size:12px; font-weight:900; cursor:pointer;" onclick="openPassportModal()">
+              📋 내 도장판 보기
+            </button>
+            <button style="background:#2563EB; color:white; border:none; padding:6px 12px; border-radius:9px; font-size:12px; font-weight:900; cursor:pointer;" onclick="openScenarioPickerModal()">
+              👥 다른 손님 고르기
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function pickOrderTray(pickedNo, myNo, btnEl) {
+    if (pickedNo === myNo) {
+      playSound('correct');
+      pickupCompleted = true;
+      btnEl.style.background = '#10B981';
+      btnEl.style.color = 'white';
+      btnEl.innerHTML = `<div style="font-size:22px;">✅</div><div style="font-size:13px;">${myNo}번 수령완료!</div>`;
+      triggerStageReaction('state-happy', '내 음료 찾았다! ☕', '맛있게 드세요! 😊', '정말 고마워요! 👍');
+      setAssistant(`딩동댕! 내 주문번호 [${myNo}번] 음료를 정확하게 찾아오셨어요! 이제 어떤 카페에 가셔도 자신 있게 주문하실 수 있어요!`);
+    } else {
+      playSound('error');
+      triggerStageReaction('state-surprised', '어머 남의 거네! 💦', `${myNo}번을 찾으세요!`, `우린 ${myNo}번이에요~`);
+      setAssistant(`아이쿠, [${pickedNo}번]은 다른 손님의 음료예요! 영수증에 적힌 우리의 번호 [${myNo}번 쟁반]을 눌러주세요~`);
+    }
+  }
+
+  // ================= 모달 1: 쉬운 우리말 카페 용어 사전 =================
+  function openDictionaryModal() {
+    playSound('click');
+    const modalArea = document.getElementById('modalContainer');
+    const listHtml = cafeGlossary.map(item => `
+      <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:12px; padding:8px 10px; margin-bottom:6px; text-align:left;">
+        <div style="font-size:13.5px; font-weight:900; color:#B45309; display:flex; justify-content:space-between; align-items:center;">
+          <span>📌 ${item.term}</span>
+          <button style="background:#EA580C; color:white; border:none; border-radius:6px; padding:2px 7px; font-size:10.5px; font-weight:800; cursor:pointer;" onclick="speak('${item.term}. ${item.easy}')">🔊 듣기</button>
+        </div>
+        <div style="font-size:12px; color:#334155; margin-top:3px; line-height:1.35; font-weight:700;">
+          👉 ${item.easy}
+        </div>
+      </div>
+    `).join('');
+
+    modalArea.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+          <h2 style="font-size:18px; color:#EA580C; margin-bottom:2px;">📖 어르신을 위한 쉬운 카페 용어 사전</h2>
+          <div style="font-size:11.5px; color:#64748B; margin-bottom:8px;">외래어 메뉴판도 우리말로 풀면 하나도 어렵지 않아요!</div>
+          <div style="max-height:58vh; overflow-y:auto;">
+            ${listHtml}
+          </div>
+          <button style="background:#334155; color:white; border:none; padding:10px; font-size:14px; font-weight:bold; border-radius:12px; width:100%; margin-top:8px; cursor:pointer;" onclick="closeModal()">
+            닫기
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ================= 모달 2: 12명 손님 & 상황 직접 선택하기 =================
+  function openScenarioPickerModal() {
+    playSound('click');
+    const modalArea = document.getElementById('modalContainer');
+    const listHtml = clientPool.map(c => `
+      <div onclick="selectScenarioFromModal(${c.id})" style="background:${c.id === currentClient.id ? '#FFF7ED' : '#F8FAFC'}; border:2px solid ${c.id === currentClient.id ? '#EA580C' : '#E2E8F0'}; border-radius:12px; padding:7px 10px; margin-bottom:6px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:8px;">
+        <div style="font-size:26px;">${c.avatar}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px; font-weight:900; color:#1E293B;">${c.id}. ${c.name}</div>
+          <div style="font-size:11px; color:#EA580C; font-weight:800;">${c.situationTitle}</div>
+        </div>
+        <div style="font-size:11px; font-weight:900; background:#EA580C; color:white; padding:4px 8px; border-radius:8px;">도전</div>
+      </div>
+    `).join('');
+
+    modalArea.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+          <h2 style="font-size:18px; color:#EA580C; margin-bottom:2px;">👥 12가지 실전 상황 골라 연습하기</h2>
+          <div style="font-size:11.5px; color:#64748B; margin-bottom:8px;">원하시는 이웃 손님과 키오스크 돌발 상황을 직접 골라보세요!</div>
+          <div style="max-height:58vh; overflow-y:auto;">
+            ${listHtml}
+          </div>
+          <button style="background:#334155; color:white; border:none; padding:10px; font-size:14px; font-weight:bold; border-radius:12px; width:100%; margin-top:8px; cursor:pointer;" onclick="closeModal()">
+            닫기
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function selectScenarioFromModal(id) {
+    closeModal();
+    const target = clientPool.find(c => c.id === id);
+    if (target) startMissionWithClient(target);
+  }
+
+  // ================= 모달 3: 단골 도장판 & 6종 황금 뱃지 =================
+  function openPassportModal() {
+    playSound('click');
+    const modalArea = document.getElementById('modalContainer');
+
+    let stampSlotsHtml = '';
+    for (let i = 1; i <= 10; i++) {
+      const isFilled = i <= stampCount;
+      stampSlotsHtml += `
+        <div class="stamp-slot ${isFilled ? 'filled' : ''}">
+          ${isFilled ? '☕' : i}
+        </div>
+      `;
+    }
+
+    modalArea.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+          <h2 style="font-size:18px; color:#EA580C; margin-bottom:2px;">📜 김순자 어르신의 단골 수첩</h2>
+          <div style="font-size:11.5px; color:#64748B; margin-bottom:6px;">도장 10개와 6개의 실전 칭찬 뱃지를 모두 모아보세요!</div>
+
+          <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:14px; padding:8px;">
+            <div style="font-weight:900; font-size:13px; color:#78350F; margin-bottom:4px;">☕ 단골 스탬프 (${stampCount} / 10개)</div>
+            <div class="stamp-grid">
+              ${stampSlotsHtml}
+            </div>
+          </div>
+
+          <h3 style="font-size:14px; color:#1E293B; margin:8px 0 4px; text-align:left;">🏅 획득한 칭찬 뱃지 (6종)</h3>
+          <div class="badge-grid">
+            <div class="badge-card ${unlockedBadges.diningMaster ? 'unlocked' : ''}">
+              <div style="font-size:22px;">🏪</div>
+              <div>
+                <div style="font-weight:900; font-size:11.5px;">포장·텀블러 달인</div>
+                <div style="font-size:10px; color:#64748B;">매장/포장/할인 구분</div>
+              </div>
+            </div>
+            <div class="badge-card ${unlockedBadges.adMaster ? 'unlocked' : ''}">
+              <div style="font-size:22px;">🛡️</div>
+              <div>
+                <div style="font-weight:900; font-size:11.5px;">돌발창 격파왕</div>
+                <div style="font-size:10px; color:#64748B;">광고·시간연장 해결</div>
+              </div>
+            </div>
+            <div class="badge-card ${unlockedBadges.chipMaster ? 'unlocked' : ''}">
+              <div style="font-size:22px;">💳</div>
+              <div>
+                <div style="font-weight:900; font-size:11.5px;">황금칩 마스터</div>
+                <div style="font-size:10px; color:#64748B;">카드 앞면 바르게 꽂기</div>
+              </div>
+            </div>
+            <div class="badge-card ${unlockedBadges.optionMaster ? 'unlocked' : ''}">
+              <div style="font-size:22px;">☕</div>
+              <div>
+                <div style="font-weight:900; font-size:11.5px;">입맛 소믈리에</div>
+                <div style="font-size:10px; color:#64748B;">맞춤 옵션 완벽 주문</div>
+              </div>
+            </div>
+            <div class="badge-card ${unlockedBadges.couponMaster ? 'unlocked' : ''}">
+              <div style="font-size:22px;">🎁</div>
+              <div>
+                <div style="font-weight:900; font-size:11.5px;">스마트 결제왕</div>
+                <div style="font-size:10px; color:#64748B;">쿠폰·모바일페이 성공</div>
+              </div>
+            </div>
+            <div class="badge-card ${unlockedBadges.pointMaster ? 'unlocked' : ''}">
+              <div style="font-size:22px;">📱</div>
+              <div>
+                <div style="font-weight:900; font-size:11.5px;">알뜰 적립 박사</div>
+                <div style="font-size:10px; color:#64748B;">전화번호 도장 적립</div>
+              </div>
+            </div>
+          </div>
+
+          <button style="background:#334155; color:white; border:none; padding:10px; font-size:14px; font-weight:bold; border-radius:12px; width:100%; margin-top:10px; cursor:pointer;" onclick="closeModal()">
+            닫기
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function closeModal() {
+    document.getElementById('modalContainer').innerHTML = '';
+  }
+
+  function goNext() {
+    playSound('click');
+    if (currentStep === 1) {
+      if (!userSelection.menuId) {
+        setAssistant("어르신, 먼저 손님이 부탁하신 메뉴 카드를 하나 콕 골라주세요!");
+        return;
+      }
+      if (userSelection.menuId !== currentClient.target.menuId) {
+        playSound('error');
+        setAssistant("손님이 부탁하신 메뉴와 달라요! 아래 빨간 삭제 버튼을 눌러 바로잡은 후 다시 골라보세요.");
+        return;
+      }
+      if (userSelection.qty !== currentClient.target.qty) {
+        playSound('error');
+        setAssistant(`어르신! 손님이 [${currentClient.target.qty}잔]을 부탁하셨어요! 오른쪽 [+] 버튼을 눌러 ${currentClient.target.qty}개로 맞춰주세요~`);
+        return;
+      }
+
+      if (!diningPopupShown) {
+        diningPopupShown = true;
+        showDiningChoicePopup(() => {
+          if (!obstaclePopupShown) {
+            obstaclePopupShown = true;
+            triggerSituationPopup(() => {
+              currentStep = 2;
+              renderStep2();
+            });
+          } else {
+            currentStep = 2;
+            renderStep2();
+          }
+        });
+        return;
+      }
+
+      currentStep = 2;
+      renderStep2();
+    } else if (currentStep === 2) {
+      if (currentClient.obstacleType === 'point_phone' && !userSelection.phoneDigits) {
+        showPointPhonePopup(() => {
+          currentStep = 3;
+          renderStep3();
+        });
+        return;
+      }
+      currentStep = 3;
+      renderStep3();
+    } else if (currentStep === 3) {
+      handlePaymentAction();
+    } else if (currentStep === 4) {
+      generateNewRandomMission();
+    }
+  }
+
+  function goPrev() {
+    playSound('click');
+    if (currentStep > 1 && currentStep < 4) {
+      currentStep--;
+      if (currentStep === 1) renderStep1();
+      else if (currentStep === 2) renderStep2();
+      else if (currentStep === 3) renderStep3();
+    }
+  }
+
+  function launchConfetti() {
+    const canvas = document.getElementById('confettiCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+
+    const pieces = [];
+    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6'];
+
+    for (let i = 0; i < 70; i++) {
+      pieces.push({
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        r: Math.random() * 6 + 3,
+        d: Math.random() * 70,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        tilt: Math.floor(Math.random() * 10) - 10,
+        tiltAngleIncremental: (Math.random() * 0.07) + 0.05,
+        tiltAngle: 0,
+        vx: (Math.random() - 0.5) * 14,
+        vy: (Math.random() - 0.7) * 16,
+        gravity: 0.35
+      });
+    }
+
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.tiltAngle += p.tiltAngleIncremental;
+        p.tilt = Math.sin(p.tiltAngle) * 10;
+
+        ctx.beginPath();
+        ctx.lineWidth = p.r;
+        ctx.strokeStyle = p.color;
+        ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+        ctx.stroke();
+      });
+
+      frame++;
+      if (frame < 100) requestAnimationFrame(draw);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    draw();
+  }
+
+  window.onload = () => {
+    loadProgress();
+    updateHeaderProfile();
+    startMissionWithClient(clientPool[0]);
+  };
+</script>
+</body>
+</html>
